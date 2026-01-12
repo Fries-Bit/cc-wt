@@ -1,0 +1,35 @@
+fn add(integer a, integer b) -> integer {
+    integer res = a + b;
+    return res;
+}
+
+fn get_greeting(string name) -> string {
+    return "Hello, " + name;
+}
+
+fn is_positive(integer n) -> bool {
+    if (n > 0) {
+        return true;
+    }
+    return false;
+}
+
+fn main() {
+    print("Testing functions and returns...");
+
+    integer sum = add(10, 20);
+    print("10 + 20 = {}@", sum);
+
+    string greet = get_greeting("Welt");
+    print(greet);
+
+    bool pos = is_positive(5);
+    print("Is 5 positive? {}@", pos);
+
+    bool neg = is_positive(-1);
+    print("Is -1 positive? {}@", neg);
+
+    print(nonexistent);
+
+    print("Functions and returns test completed.");
+}

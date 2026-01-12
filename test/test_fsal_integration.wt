@@ -1,0 +1,27 @@
+fn main() {
+    print("Testing FSAL Integration...");
+
+    // Import FSAL library
+    imp.lib { "fsal" }
+
+    // File operations using def_file and File type
+    string test_file = "test_output.txt";
+    File f = def_file(test_file);
+    
+    print("Writing to file...");
+    f.write("Hello from Welt FSAL!");
+
+    print("Reading from file...");
+    f.read();
+    string content = __last_ret;
+    print("File content: {}@", content);
+
+    print("Moving file...");
+    f.mov("test_output_moved.txt");
+    
+    // Cleanup
+    File f2 = "test_output_moved.txt";
+    f2.del();
+
+    print("FSAL Integration test completed.");
+}

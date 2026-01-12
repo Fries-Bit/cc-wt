@@ -1,0 +1,39 @@
+fn main() {
+    print("Testing control flow...");
+
+    integer x = 10;
+    integer y = 20;
+
+    // Comparisons
+    if (x < y) { print("x < y is true"); }
+    if (x <= 10) { print("x <= 10 is true"); }
+    if (y > x) { print("y > x is true"); }
+    if (y >= 20) { print("y >= 20 is true"); }
+    if (x == 10) { print("x == 10 is true"); }
+    if (x != y) { print("x != y is true"); }
+    if (x === 10) { print("x === 10 is true (strict)"); }
+    if (x <> y) { print("x <> y is true (not equal)"); }
+
+    // if-else
+    if (x > y) {
+        print("x > y");
+    } else {
+        print("x <= y (else branch)");
+    }
+
+    // Match-like if
+    string status = "error";
+    if (status) {
+        "ok" -> { print("Status is OK"); },
+        "error" -> { print("Status is ERROR (match)"); },
+        def -> { print("Status is unknown"); }
+    }
+
+    // For loop
+    print("Looping from 0 to 4:");
+    for [integer i = 0; i < 5; i++] {
+        print(i);
+    }
+
+    print("Control flow test completed.");
+}

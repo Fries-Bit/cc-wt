@@ -1,0 +1,37 @@
+// Single line comment
+/*
+   Multi-line
+   comment
+*/
+
+fn main() {
+    print("Testing basic syntax...");
+
+    // Strings
+    string s1 = "Hello, World!";
+    string s2 = "String with \"escaped\" quotes";
+    string s3 = "Multi-line
+string support";
+
+    print(s1);
+    print(s2);
+    print(s3);
+
+    // Numbers
+    integer i = 42;
+    float f = 3.14;
+    integer hex_val = <hex>2A; // 42 in hex
+
+    print(i);
+    print(f);
+    print(hex_val);
+
+    // Booleans
+    bool t = true;
+    bool fl = false;
+
+    print(t);
+    print(fl);
+
+    print("Syntax test completed.");
+}

@@ -1,0 +1,35 @@
+fn main() {
+    print("Testing types and variables...");
+
+    // Basic types
+    integer a = 10;
+    float b = 20.5;
+    string c = "Welt";
+    bool d = true;
+    bit e = 1;
+
+    print(a);
+    print(b);
+    print(c);
+    print(d);
+    print(e);
+
+    // Aliases
+    ss f = "String alias";
+    print(f);
+
+    // Constants
+    const integer MAX = 100;
+    print(MAX);
+
+    // impdef (Type Aliasing)
+    impdef integer MyInt;
+    MyInt g = 500;
+    print(g);
+
+    // Variable re-assignment
+    a = 20;
+    print(a);
+
+    print("Types and variables test completed.");
+}

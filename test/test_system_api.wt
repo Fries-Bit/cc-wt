@@ -1,0 +1,28 @@
+fn main() {
+    print("Testing System APIs...");
+
+    // Throw API
+    print("Testing Throw.warning...");
+    Throw.warning("This is a test warning. It should pause for 1 second.");
+
+    // control-prog API (ctrlprog)
+    print("Testing ctrlprog.wait(500)...");
+    ctrlprog.wait(500);
+
+    print("Testing ctrlprog.back (simulating a loop)...");
+    integer count = 0;
+    
+    // Label-like target for back
+    print("Loop start"); // Line 16 (approx)
+    count++;
+    print("Count: {}@", count);
+    if (count < 3) {
+        print("Jumping back to line 16...");
+        ctrlprog.back(16);
+    }
+
+    print("Testing Throw.error (uncomment to test fatal exit)...");
+    // Throw.error("Fatal test error");
+
+    print("System API test completed.");
+}

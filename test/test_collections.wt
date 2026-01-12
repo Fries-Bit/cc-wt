@@ -1,0 +1,8 @@
+fn main() {
+    print("Testing collections (declaration)...");
+
+    array my_list;
+    table my_map;
+
+    print("Collections declared successfully.");
+}
