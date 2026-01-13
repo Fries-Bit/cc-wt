@@ -1,11 +1,11 @@
-:: This batch file was made with AI
+::  This batch file was made with AI
 :: i do NOT know how to make batch files
 
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 
 :: Build script for FSAL and Welt (Windows)
-:: Reorganized into root fsal/ and welt/ folders
+:: Single fsal.exe with integrated installer
 
 set ROOT=%~dp0
 set OUT=%ROOT%bin
@@ -20,7 +20,7 @@ set INC_FSAL=-I"%SRC_FSAL%" -I"%SRC_FSAL%\internal_platform" -I"%SRC_FSAL%\inter
 set INC_WELT=-I"%SRC_WELT%\core" -I"%SRC_WELT%\tokenizer" -I"%SRC_WELT%\compiler" -I"%SRC_WELT%\runtime" -I"%SRC_WELT%\diag"
 
 :: Source files
-set WELT_OBJS=welt\core\core.c welt\tokenizer\lexer.c welt\runtime\variable.c welt\diag\diag.c welt\compiler\interpreter.c
+set WELT_OBJS=src\core\core.c src\tokenizer\lexer.c src\runtime\variable.c src\diag\diag.c src\compiler\interpreter.c
 set FSAL_DEPS=fsal\internal_platform\platform_win.c fsal\internal_archive\zipwrap_ps.c fsal\internal_core\config.c fsal\internal_core\ui.c fsal\internal_net\fsnet.c
 
 where cl >nul 2>nul
@@ -28,9 +28,6 @@ if %ERRORLEVEL%==0 (
   echo Building with MSVC cl...
   cl /D_CRT_SECURE_NO_WARNINGS /nologo /W3 /O2 %INC_FSAL% %INC_WELT% ^
     %FSAL_DEPS% %WELT_OBJS% fsal\fsal.c /Fe:"%OUT%\fsal.exe" /link Ws2_32.lib Winhttp.lib
-  if errorlevel 1 goto :build_fail
-  cl /D_CRT_SECURE_NO_WARNINGS /nologo /W3 /O2 %INC_FSAL% %INC_WELT% ^
-    %FSAL_DEPS% %WELT_OBJS% fsal\installer.c /Fe:"%OUT%\installer.exe" /link Ws2_32.lib Winhttp.lib
   if errorlevel 1 goto :build_fail
   goto :build_ok
 ) else (
@@ -44,9 +41,6 @@ if %ERRORLEVEL%==0 (
   set LDFLAGS=-lwinhttp -lws2_32 -lole32 -lshell32 -luser32 -ladvapi32
   
   "!GCC_BIN!" !CFLAGS! %FSAL_DEPS:\=/% %WELT_OBJS:\=/% fsal/fsal.c -o "%OUT%\fsal.exe" !LDFLAGS!
-  if errorlevel 1 goto :build_fail
-  
-  "!GCC_BIN!" !CFLAGS! %FSAL_DEPS:\=/% %WELT_OBJS:\=/% fsal/installer.c -o "%OUT%\installer.exe" !LDFLAGS!
   if errorlevel 1 goto :build_fail
   
   goto :build_ok
