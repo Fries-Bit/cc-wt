@@ -101,3 +101,20 @@ WeltType parse_type(const char* typeStr){
     if(strcmp(t, "array") == 0) return TYPE_ARRAY;
     return TYPE_UNDEFINED;
 }
+
+const char* get_type_name(WeltType type){
+    switch(type){
+        case TYPE_STRING: return "string";
+        case TYPE_INTEGER: return "integer";
+        case TYPE_FLOAT: return "float";
+        case TYPE_BOOL: return "bool";
+        case TYPE_BIT: return "bit";
+        case TYPE_FILE: return "File";
+        case TYPE_FSAL: return "FSAL";
+        case TYPE_TABLE: return "table";
+        case TYPE_ARRAY: return "array";
+        case TYPE_POINTER: return "pointer";
+        case TYPE_UNDEFINED: return "undefined";
+        default: return "unknown";
+    }
+}

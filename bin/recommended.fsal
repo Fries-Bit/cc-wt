@@ -1,7 +1,0 @@
-[listdep]
-1dep = [
-   name = "Package FSAL Testing"
-   description = "This is a test package for FSAL\nInstalling it will just waste your storage"
-   version = 1:integer
-   git = "https://github.com/Fries-Bit/package-fsal-test"
-]

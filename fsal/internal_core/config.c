@@ -28,9 +28,15 @@ int parse_fsal_config(const char* text, FsalConfig* outCfg, char* err, int errCa
         if(klen >= sizeof(key)) klen = sizeof(key)-1;
         strncpy(key, s, klen); key[klen]='\0';
         const char* rhs = trim(eq+1);
-        // expect format: key = value:type
-        const char* colon = strrchr(rhs, ':');
-        size_t vlen = colon? (size_t)(colon - rhs) : strlen(rhs);
+        size_t vlen = strlen(rhs);
+        const char* colon = strchr(rhs, ':');
+        if(colon && colon > rhs) {
+            const char* test = colon + 1;
+            int is_type = 0;
+            while(*test && (isalpha(*test) || *test == '_')) test++;
+            if(*test == '\0' || isspace(*test)) is_type = 1;
+            if(is_type) vlen = (size_t)(colon - rhs);
+        }
         if(vlen >= sizeof(val)) vlen = sizeof(val)-1;
         strncpy(val, rhs, vlen); val[vlen]='\0';
         // strip quotes if present
@@ -65,15 +71,15 @@ int parse_fsal_deps(const char* text, FsalDep* outDeps, int maxDeps, char* err, 
         if(s[0]=='#' || s[0]==';' || s[0]=='\0') continue;
         
         if(s[0]=='[') {
-            if(strncmp(s, "[listdep]", 9) == 0) in_list = 1;
+            if(strncmp(s, "[listdep]", 9) == 0 || strncmp(s, "[dependencies]", 14) == 0) in_list = 1;
             else in_list = 0;
             continue;
         }
         
         if(!in_list) continue;
         
-        // Look for "Ndep = ["
-        if(strstr(s, "dep") && strstr(s, "=") && strstr(s, "[")) {
+        // Look for "Ndep = [", "Ndep_d = [", "N_d = [", etc.
+        if(strstr(s, "=") && strstr(s, "[")) {
             FsalDep* d = &outDeps[count];
             memset(d, 0, sizeof(*d));
             
@@ -94,8 +100,15 @@ int parse_fsal_deps(const char* text, FsalDep* outDeps, int maxDeps, char* err, 
                 for(char* t=key; *t; ++t) if(isspace(*t)) *t='\0';
                 
                 const char* rhs = trim(eq+1);
-                const char* colon = strrchr(rhs, ':');
-                size_t vlen = colon ? (size_t)(colon - rhs) : strlen(rhs);
+                size_t vlen = strlen(rhs);
+                const char* colon = strchr(rhs, ':');
+                if(colon && colon > rhs) {
+                    const char* test = colon + 1;
+                    int is_type = 0;
+                    while(*test && (isalpha(*test) || *test == '_')) test++;
+                    if(*test == '\0' || isspace(*test)) is_type = 1;
+                    if(is_type) vlen = (size_t)(colon - rhs);
+                }
                 if(vlen >= sizeof(val)) vlen = sizeof(val)-1;
                 strncpy(val, rhs, vlen); val[vlen]='\0';
                 

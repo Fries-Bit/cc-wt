@@ -7,13 +7,13 @@
          width="155%">
   </picture>
 
-[Website][site] | [gt] | [learn] | [doc] | [contru]
+[Documentation] | [Download] | [Introduction] | [RAI] | [Contrubution]
 </div>
 
-This will include the compiler, installation, documentation and more.
+This will include the standard library, documentation and possibly more.
 
-[Site]: https://example.com
-[gt]: https://example.com
-[learn]: https://example.com
-[doc]: https://example.com
-[contru]: https://example.com
+[Documentation]: https://example.com
+[Download]: https://example.com
+[Introduction]: https://example.com
+[RAI]: https://example.com
+[Contrubution]: https://example.com

@@ -11,6 +11,10 @@ set ROOT=%~dp0
 set OUT=%ROOT%bin
 if not exist "%OUT%" mkdir "%OUT%"
 
+:: Generate config header from r_config.fsal
+call w_config.bat
+if errorlevel 1 goto :build_fail
+
 :: Paths to folders
 set SRC_FSAL=%ROOT%fsal
 set SRC_WELT=%ROOT%src

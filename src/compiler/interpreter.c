@@ -298,6 +298,12 @@ static const char* resolve_identifier(const char* path, int* pc, int end_tok) {
     return val;
 }
 
+static int check_type_compatibility(WeltType expected, WeltType actual) {
+    if(expected == TYPE_UNDEFINED) return 1;
+    if(actual == TYPE_UNDEFINED) return 1;
+    return expected == actual;
+}
+
 int execute_code_block(const char* path, int start_tok, int end_tok, int argc, const char** argv){
     int pc = start_tok;
     while(pc < end_tok && !g_should_return){
@@ -406,6 +412,23 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
             continue;
         }
 
+        if(tok->type == TOKEN_KEYWORD && strcmp(tok->value, "retype") == 0){
+            pc++;
+            if(pc < end_tok && (g_tokens[pc].type == TOKEN_KEYWORD || g_tokens[pc].type == TOKEN_IDENTIFIER)){
+                char original[64]; strcpy(original, g_tokens[pc].value); pc++;
+                if(pc < end_tok && (g_tokens[pc].type == TOKEN_KEYWORD || g_tokens[pc].type == TOKEN_IDENTIFIER)){
+                    char alias[64]; strcpy(alias, g_tokens[pc].value); pc++;
+                    add_type_alias(original, alias);
+                }
+            }
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_SEMICOLON) pc++;
+            else {
+                welt_diagnostic(path, g_tokens[pc-1].line, g_tokens[pc-1].col, "", "E0015: expected semicolon after retype statement");
+                return 1;
+            }
+            continue;
+        }
+
         if(tok->type == TOKEN_NOT && pc + 1 < end_tok && (g_tokens[pc+1].type == TOKEN_IDENTIFIER || g_tokens[pc+1].type == TOKEN_KEYWORD) && strcmp(g_tokens[pc+1].value, "include") == 0){
              pc += 2;
              if(g_tokens[pc].type == TOKEN_STRING){
@@ -437,8 +460,10 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
             if(g_current_expected_ret_type != TYPE_UNDEFINED){
                 WeltType actual = get_token_value_type(val);
                 if(actual != g_current_expected_ret_type){
-                    fprintf(stderr, "Fatal Error: Function expected to return type %d but returned type %d\n", g_current_expected_ret_type, actual);
-                    exit(1);
+                    char err[256];
+                    snprintf(err, sizeof(err), "E0020: return type mismatch: expected '%s' but got '%s'", get_type_name(g_current_expected_ret_type), get_type_name(actual));
+                    welt_diagnostic(path, g_tokens[pc-1].line, g_tokens[pc-1].col, "", err);
+                    return 1;
                 }
             }
             strcpy(g_return_value, val);
@@ -613,7 +638,17 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                     }
                 }
                 while(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON) pc++;
-                if(has_assign) set_variable(var_name, value, parse_type(type_name), path, g_tokens[saved_pc].line, g_tokens[saved_pc].col);
+                if(has_assign) {
+                    WeltType declared_type = parse_type(type_name);
+                    WeltType value_type = get_token_value_type(value);
+                    if(!check_type_compatibility(declared_type, value_type) && declared_type != TYPE_UNDEFINED){
+                        char err[512];
+                        snprintf(err, sizeof(err), "E0016: type mismatch in declaration of '%s': expected type %d but got type %d", var_name, declared_type, value_type);
+                        welt_diagnostic(path, g_tokens[saved_pc].line, g_tokens[saved_pc].col, "", err);
+                        return 1;
+                    }
+                    set_variable(var_name, value, declared_type, path, g_tokens[saved_pc].line, g_tokens[saved_pc].col);
+                }
                 else {
                     if(get_variable(var_name)){
                         WeltVariable* existing = get_variable(var_name);
@@ -630,6 +665,10 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                 }
                 WeltVariable* v = get_variable(var_name);
                 if(v){ v->is_const = is_const; v->is_sys_ind = is_sys_ind; }
+                if(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON){
+                    welt_diagnostic(path, g_tokens[pc-1].line, g_tokens[pc-1].col, "", "E0018: expected semicolon after variable declaration");
+                    return 1;
+                }
                 if(pc < end_tok) pc++; continue;
             }
         }
@@ -637,6 +676,10 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
 
         if(tok->type == TOKEN_IDENTIFIER && pc + 1 < end_tok && g_tokens[pc+1].type == TOKEN_LPAREN){
             if (handle_function_call(path, &pc, end_tok, argc, argv) != 0) return 1;
+            if(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON){
+                welt_diagnostic(path, g_tokens[pc-1].line, g_tokens[pc-1].col, "", "E0017: expected semicolon after function call");
+                return 1;
+            }
             if(pc < end_tok && g_tokens[pc].type == TOKEN_SEMICOLON) pc++;
             continue;
         }
@@ -723,12 +766,24 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                 if(is_math && value[0] == '\0') snprintf(value, sizeof(value), "%g", result);
                 if(value[0] == '\0' && !is_math) strcpy(value, g_return_value);
             }
-            if(!get_variable(var_name)){
+            WeltVariable* existing_var = get_variable(var_name);
+            if(!existing_var){
                 char err[256]; snprintf(err, sizeof(err), "E0013: use of undefined variable '%s'", var_name);
                 welt_diagnostic(path, g_tokens[pc-2].line, g_tokens[pc-2].col, "", err);
                 return 1;
             }
-            set_variable(var_name, value, TYPE_UNDEFINED, path, tok->line, tok->col);
+            WeltType value_type = get_token_value_type(value);
+            if(!check_type_compatibility(existing_var->type, value_type) && existing_var->type != TYPE_UNDEFINED){
+                char err[512];
+                snprintf(err, sizeof(err), "E0016: type mismatch in assignment to '%s': expected type %d but got type %d", var_name, existing_var->type, value_type);
+                welt_diagnostic(path, tok->line, tok->col, "", err);
+                return 1;
+            }
+            set_variable(var_name, value, existing_var->type, path, tok->line, tok->col);
+            if(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON){
+                welt_diagnostic(path, g_tokens[pc-1].line, g_tokens[pc-1].col, "", "E0019: expected semicolon after variable assignment");
+                return 1;
+            }
             if(pc < end_tok) pc++; continue;
         }
         
@@ -737,6 +792,10 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
             if(g_tokens[pc].type == TOKEN_LPAREN){
                 pc++; char fmt[512] = {0};
                 if(g_tokens[pc].type == TOKEN_STRING){ strcpy(fmt, g_tokens[pc].value); pc++; }
+                else if(g_tokens[pc].type == TOKEN_NUMBER){ 
+                    strcpy(fmt, g_tokens[pc].value); 
+                    pc++; 
+                }
                 char args[16][256]; int arg_count = 0;
                 while(pc < end_tok && g_tokens[pc].type != TOKEN_RPAREN){
                     if(g_tokens[pc].type == TOKEN_COMMA) { pc++; continue; }
@@ -749,6 +808,8 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                             welt_diagnostic(path, g_tokens[pc].line, g_tokens[pc].col, "", err);
                             return 1;
                         }
+                    } else if(g_tokens[pc].type == TOKEN_NUMBER){
+                        val = g_tokens[pc].value;
                     } else {
                         val = g_tokens[pc].value;
                     }
@@ -978,10 +1039,67 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
     return 0;
 }
 
+typedef struct {
+    int start, end;
+} FuncRange;
+
+static int find_all_functions(FuncRange* ranges, int* count){
+    *count = 0;
+    for(int i = 0; i < g_token_count && *count < 100; i++){
+        if(g_tokens[i].type == TOKEN_KEYWORD && strcmp(g_tokens[i].value, "fn") == 0){
+            int p = i + 1;
+            while(p < g_token_count && g_tokens[p].type != TOKEN_LBRACE) p++;
+            if(p < g_token_count){
+                ranges[*count].start = i;
+                int depth = 1;
+                p++;
+                while(p < g_token_count && depth > 0){
+                    if(g_tokens[p].type == TOKEN_LBRACE) depth++;
+                    else if(g_tokens[p].type == TOKEN_RBRACE) depth--;
+                    if(depth > 0) p++;
+                }
+                ranges[*count].end = p;
+                (*count)++;
+                i = p;
+            }
+        }
+    }
+    return 0;
+}
+
+static int is_in_function(int pos, FuncRange* ranges, int range_count){
+    for(int i = 0; i < range_count; i++){
+        if(pos >= ranges[i].start && pos <= ranges[i].end) return 1;
+    }
+    return 0;
+}
+
+static int find_top_level_code(int* start, int* end, FuncRange* ranges, int range_count){
+    *start = -1; *end = -1;
+    for(int i = 0; i < g_token_count; i++){
+        if(!is_in_function(i, ranges, range_count) && g_tokens[i].type != TOKEN_KEYWORD){
+            if(*start == -1) *start = i;
+            *end = i;
+        }
+    }
+    return (*start != -1) ? 0 : -1;
+}
+
 int interpret(const char* path, const char* src, int argc, const char** argv){
     g_should_return = 0; memset(g_return_value, 0, sizeof(g_return_value));
     g_current_expected_ret_type = TYPE_UNDEFINED;
     if(tokenize(path, src) != 0) return 1;
+    
+    FuncRange func_ranges[100];
+    int func_count = 0;
+    find_all_functions(func_ranges, &func_count);
+    
+    int top_level_start = -1, top_level_end = -1;
+    if(find_top_level_code(&top_level_start, &top_level_end, func_ranges, func_count) == 0){
+        populate_argv(argc, argv, 0);
+        execute_code_block(path, top_level_start, top_level_end + 1, argc, argv);
+    }
+    
     int has_sa_arg = 0, body_start = -1, body_end = -1;
     if(find_main_tokens(&body_start, &body_end) == 0){
         for(int i = 0; i < body_start; i++){
@@ -1011,8 +1129,6 @@ int interpret(const char* path, const char* src, int argc, const char** argv){
         }
         populate_argv(argc, argv, has_sa_arg);
         return execute_code_block(path, body_start, body_end, argc, argv);
-    } else {
-        populate_argv(argc, argv, 0);
-        return execute_code_block(path, 0, g_token_count, argc, argv);
     }
+    return 0;
 }

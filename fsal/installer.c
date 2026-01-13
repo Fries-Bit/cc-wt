@@ -7,14 +7,7 @@
 #include "ui.h"
 #include "config.h"
 
-static const char* EMBEDDED_RECOMMENDED_FSAL = 
-    "[listdep]\n"
-    "1dep = [\n"
-    "   name = \"test1\"\n"
-    "   description = \"This is a test package for FSAL\":string\n"
-    "   version = 1:integer\n"
-    "   git = \"https://github.com/Fries-Bit/package-fsal-test\"\n"
-    "]\n";
+
 
 static int extract_embedded_fsal(const char* selfPath, const char* outputPath) {
     FILE* self = fopen(selfPath, "rb");
@@ -87,18 +80,20 @@ int main() {
     
     ui_print_step("Setting up", "fsal.exe");
     
-    if (!pw_file_exists(srcFsal)) {
-        ui_print_step("Extracting", "embedded fsal.exe");
-        if (extract_embedded_fsal(exe, dstFsal) != 0) {
-            ui_print_error("Failed to extract embedded fsal.exe");
-            return 2;
-        }
-    } else {
+    int fsal_ready = 0;
+    if (pw_file_exists(srcFsal)) {
         char cmd[2048];
         snprintf(cmd, sizeof(cmd), "powershell -NoProfile -Command \"Copy-Item -Force -LiteralPath '%s' -Destination '%s'\"", srcFsal, dstFsal);
-        if (pw_shell(cmd, NULL, 0) != 0) {
-            ui_print_error("Failed to copy fsal.exe");
-            return 2;
+        if (pw_shell(cmd, NULL, 0) == 0) {
+            fsal_ready = 1;
+        }
+    }
+    if (!fsal_ready) {
+        ui_print_step("Extracting", "embedded fsal.exe");
+        if (extract_embedded_fsal(exe, dstFsal) == 0) {
+            fsal_ready = 1;
+        } else {
+            ui_print_warning("Could not prepare fsal manager, skipping package installation");
         }
     }
 
@@ -114,24 +109,38 @@ int main() {
     char body[1024]; snprintf(body, sizeof(body), "@echo off\r\n\"%s\" %%*\r\n", dstFsal);
     pw_write_text(shim, body);
 
-    // Recommended packages - use embedded content
-    char* text = malloc(strlen(EMBEDDED_RECOMMENDED_FSAL) + 1);
-    strcpy(text, EMBEDDED_RECOMMENDED_FSAL);
-    
-    FsalDep deps[10];
-    int count = parse_fsal_deps(text, deps, 10, NULL, 0);
-    for (int i = 0; i < count; i++) {
-        if (ui_confirm(deps[i].name, deps[i].description)) {
-            ui_print_step("Unpacking", deps[i].name);
-            char cmd[2048];
-            snprintf(cmd, sizeof(cmd), "\"%s\" unpack %s", dstFsal, deps[i].git);
-            pw_shell(cmd, NULL, 0);
-        }
+    char* text = NULL;
+    size_t textSize = 0;
+    char configPath[512];
+    char projRoot[512];
+    char* lastSlash = strrchr(curDir, '\\');
+    if (lastSlash) {
+        size_t len = (size_t)(lastSlash - curDir);
+        if (len >= sizeof(projRoot)) len = sizeof(projRoot) - 1;
+        strncpy(projRoot, curDir, len);
+        projRoot[len] = '\0';
+    } else {
+        snprintf(projRoot, sizeof(projRoot), "%s", curDir);
     }
-    free(text);
+    pw_join(projRoot, "config\\r_config.fsal", configPath, sizeof(configPath));
+    
+    if (pw_read_text(configPath, &text, &textSize) == 0 && text) {
+        FsalDep deps[10];
+        int count = parse_fsal_deps(text, deps, 10, NULL, 0);
+        for (int i = 0; i < count; i++) {
+            if (ui_confirm(deps[i].name, deps[i].description, deps[i].version, deps[i].git)) {
+                ui_print_step("Unpacking", deps[i].name);
+                char cmd[2048];
+                snprintf(cmd, sizeof(cmd), "\"%s\" unpack %s", dstFsal, deps[i].git);
+                pw_shell(cmd, NULL, 0);
+            }
+        }
+        free(text);
+    } else {
+        ui_print_warning("Could not read config/r_config.fsal, skipping recommended packages");
+    }
 
-    // Welt is recommended by default
-    if (ui_confirm("Welt", "The Welt programming language runtime and compiler.")) {
+    if (ui_confirm("Welt", "The Welt programming language,\nincludes the standard library and compiler.", 0, "https://github.com/Fries-Bit/Welt :: Official Welt Git Repository")) {
         char cmd[2048];
         snprintf(cmd, sizeof(cmd), "\"%s\" unpack welt", dstFsal);
         pw_shell(cmd, NULL, 0);

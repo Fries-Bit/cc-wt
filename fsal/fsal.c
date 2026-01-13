@@ -10,6 +10,7 @@
 #include "config.h"
 #include "welt.h"
 #include "ui.h"
+#include "config_embedded.h"
 
 static void appdata_fsaldir(char* out, size_t cap){
     const char* up = getenv("USERPROFILE");
@@ -39,10 +40,9 @@ static int is_welt_unpacked() {
 static void usage(){
     printf("%s%sFSAL CLI%s\n", FSAL_COLOR_BOLD, FSAL_COLOR_CYAN, FSAL_COLOR_RESET);
     printf("Usage:\n");
-    printf("  fsal unpack <repo-url|welt>\n");
+    printf("  fsal unpack <user/repo> or <git repo url>\n");
     if(is_welt_unpacked()) {
-        printf("  fsal welt inweld <file.wt>\n");
-        printf("  fsal welt cweld <file.wt> [-into out.exe]\n");
+        printf("  Learn more about fsal unpacking at \n  https://github.com/Fries-Bit/FSAL/docs/introduction.md\n\n");
     }
 }
 
@@ -107,9 +107,17 @@ static int cmd_unpack(int argc, char** argv){
         return 0;
     }
     ui_print_step("Unpacking", argv[2]);
+    char repo[1024];
+    if (strstr(argv[2], "://") == NULL && strchr(argv[2], '/') != NULL) {
+        snprintf(repo, sizeof(repo), "https://github.com/%s", argv[2]);
+    } else {
+        strncpy(repo, argv[2], sizeof(repo)-1);
+        repo[sizeof(repo)-1] = '\0';
+    }
+
     char tmpdir[512]; pw_join(root, "_tmp", tmpdir, sizeof(tmpdir)); pw_ensure_dir(tmpdir);
     char zip[512]; pw_join(tmpdir, "repo.zip", zip, sizeof(zip));
-    if(fs_download_github_zip(argv[2], zip, dl_progress, "Downloading")!=0){ 
+    if(fs_download_github_zip(repo, zip, dl_progress, "Downloading")!=0){ 
         ui_print_error("Failed to download repository"); return 4; 
     }
     char exdir[512]; pw_join(tmpdir, "extract", exdir, sizeof(exdir)); pw_ensure_dir(exdir);
@@ -196,14 +204,15 @@ static int installer_main(const char* exe) {
         ui_print_error("Cannot create installation directory");
         return 1;
     }
+    
     char dstFsal[512]; pw_join(dir, "fsal.exe", dstFsal, sizeof(dstFsal));
+    
     ui_print_step("Setting up", "fsal.exe");
+    
     char cmd[2048];
     snprintf(cmd, sizeof(cmd), "powershell -NoProfile -Command \"Copy-Item -Force -LiteralPath '%s' -Destination '%s'\"", exe, dstFsal);
-    if (pw_shell(cmd, NULL, 0) != 0) {
-        ui_print_error("Failed to copy fsal.exe");
-        return 2;
-    }
+    int fsal_ready = (pw_shell(cmd, NULL, 0) == 0);
+    
     char bin[512]; pw_join(dir, ".fsal\\bin", bin, sizeof(bin));
     pw_ensure_dir(bin);
     char err[256];
@@ -213,6 +222,26 @@ static int installer_main(const char* exe) {
     char shim[512]; pw_join(bin, "fsal.cmd", shim, sizeof(shim));
     char body[1024]; snprintf(body, sizeof(body), "@echo off\r\n\"%s\" %%*\r\n", dstFsal);
     pw_write_text(shim, body);
+    
+    if (fsal_ready) {
+        FsalDep deps[10];
+        int count = parse_fsal_deps(EMBEDDED_RECOMMENDED_FSAL, deps, 10, NULL, 0);
+        for (int i = 0; i < count; i++) {
+            if (ui_confirm(deps[i].name, deps[i].description, deps[i].version, deps[i].git)) {
+                ui_print_step("Unpacking", deps[i].name);
+                char cmd[2048];
+                snprintf(cmd, sizeof(cmd), "\"%s\" unpack %s", dstFsal, deps[i].git);
+                pw_shell(cmd, NULL, 0);
+            }
+        }
+
+        if (ui_confirm("Welt", "The Welt programming language,\nincludes the standard library and compiler.", 0, "https://github.com/Fries-Bit/Welt :: Official Welt Git Repository")) {
+            char cmd[2048];
+            snprintf(cmd, sizeof(cmd), "\"%s\" unpack welt", dstFsal);
+            pw_shell(cmd, NULL, 0);
+        }
+    }
+    
     return 0;
 }
 

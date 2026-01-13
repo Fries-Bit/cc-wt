@@ -39,10 +39,25 @@ void ui_loading_bar(size_t current, size_t total, const char* label) {
     if (current >= total && total > 0) printf("\n");
 }
 
-int ui_confirm(const char* name, const char* desc) {
+int ui_confirm(const char* name, const char* desc, int version, const char* git) {
     printf("%s%s%s\n", FSAL_COLOR_BOLD, name, FSAL_COLOR_RESET);
-    printf("%s\n--\n", desc);
-    printf("This will install a recommended package, unpack it? [Y/n]? ");
+    
+    for (const char* p = desc; *p; p++) {
+        if (p[0] == '\\' && p[1] == 'n') {
+            printf("\n");
+            p++;
+        } else {
+            printf("%c", *p);
+        }
+    }
+    printf("\n");
+    
+    if (version > 0) {
+        printf("version: %d\n", version);
+    }
+    printf("git: %s\n", git);
+    
+    printf("\nThis package was recommended with FSAL, would you wish to install it? [Y/n]? ");
     fflush(stdout);
     char buf[16];
     if (fgets(buf, sizeof(buf), stdin)) {

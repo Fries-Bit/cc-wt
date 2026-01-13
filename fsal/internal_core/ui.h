@@ -17,6 +17,6 @@ void ui_print_step(const char* action, const char* target);
 void ui_print_error(const char* msg);
 void ui_print_warning(const char* msg);
 void ui_loading_bar(size_t current, size_t total, const char* label);
-int ui_confirm(const char* name, const char* desc);
+int ui_confirm(const char* name, const char* desc, int version, const char* git);
 
 #endif

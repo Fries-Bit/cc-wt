@@ -89,6 +89,7 @@ void free_variable(const char* name);
 WeltVariable* create_variable(const char* name, WeltType type, const char* path, int line, int col);
 const char* get_variable_value(const char* name);
 WeltType parse_type(const char* typeStr);
+const char* get_type_name(WeltType type);
 void add_type_alias(const char* original, const char* alias);
 int is_alias(const char* word);
 const char* get_original_type(const char* alias);
