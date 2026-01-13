@@ -9,7 +9,7 @@ int is_keyword(const char* word){
         "integer", "float", "string", "bool", "ss", "class", "table", "array",
         "sys_ind", "bit", "global_extentions", "imp", "lib", "File", "impdef",
         "enum", "fwww_at", "sa_free", "has", "addToTable", "addToArray",
-        "def_fsal", "execute_C", "Throw", "control-prog", "wait", "stop", "back", "retype"
+        "def_fsal", "execute_C", "Throw", "control-prog", "wait", "stop", "back", "retype", "crp"
     };
     int count = sizeof(keywords) / sizeof(keywords[0]);
     for(int i = 0; i < count; i++){

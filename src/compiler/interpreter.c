@@ -78,7 +78,11 @@ static int evaluate_comparison(const char* left_val, const char* right_val, Welt
     if(is_numeric) {
         double l = atof(left_val); double r = atof(right_val);
         switch(op) {
-            case TOKEN_EQ: case TOKEN_STRICT_EQ: return l == r;
+            case TOKEN_STRICT_EQ: return l == r;
+            case TOKEN_EQ: {
+                // Not integer sensitive: compare as doubles
+                return l == r;
+            }
             case TOKEN_NE: case TOKEN_LT_GT: return l != r;
             case TOKEN_LT: return l < r;
             case TOKEN_LE: return l <= r;
@@ -87,14 +91,22 @@ static int evaluate_comparison(const char* left_val, const char* right_val, Welt
             default: return 0;
         }
     } else {
-        int cmp = strcmp(left_val, right_val);
         switch(op) {
-            case TOKEN_EQ: case TOKEN_STRICT_EQ: return cmp == 0;
-            case TOKEN_NE: case TOKEN_LT_GT: return cmp != 0;
-            case TOKEN_LT: return cmp < 0;
-            case TOKEN_LE: return cmp <= 0;
-            case TOKEN_GT: return cmp > 0;
-            case TOKEN_GE: return cmp >= 0;
+            case TOKEN_STRICT_EQ: return strcmp(left_val, right_val) == 0;
+            case TOKEN_EQ: {
+                // Not case sensitive
+                char* l = _strdup(left_val); char* r = _strdup(right_val);
+                for(int i=0; l[i]; i++) l[i] = tolower(l[i]);
+                for(int i=0; r[i]; i++) r[i] = tolower(r[i]);
+                int res = strcmp(l, r) == 0;
+                free(l); free(r);
+                return res;
+            }
+            case TOKEN_NE: case TOKEN_LT_GT: return strcmp(left_val, right_val) != 0;
+            case TOKEN_LT: return strcmp(left_val, right_val) < 0;
+            case TOKEN_LE: return strcmp(left_val, right_val) <= 0;
+            case TOKEN_GT: return strcmp(left_val, right_val) > 0;
+            case TOKEN_GE: return strcmp(left_val, right_val) >= 0;
             default: return 0;
         }
     }
@@ -289,6 +301,21 @@ static const char* resolve_identifier(const char* path, int* pc, int end_tok) {
             snprintf(full_name, sizeof(full_name), "%s[%s]", g_tokens[current_pc].value, index_val);
             *pc += 3;
         }
+    } else if (current_pc + 2 < end_tok && g_tokens[current_pc+1].type == TOKEN_DOT && g_tokens[current_pc+2].type == TOKEN_IDENTIFIER) {
+        WeltVariable* var = get_variable(g_tokens[current_pc].value);
+        if (var) {
+            if (strcmp(g_tokens[current_pc+2].value, "addr") == 0) {
+                static char addr_buf[64];
+                snprintf(addr_buf, sizeof(addr_buf), "0x%p", (void*)var->value);
+                *pc += 2;
+                return addr_buf;
+            } else if (strcmp(g_tokens[current_pc+2].value, "length_of_variable") == 0) {
+                static char len_buf[32];
+                snprintf(len_buf, sizeof(len_buf), "%zu", strlen(var->value));
+                *pc += 2;
+                return len_buf;
+            }
+        }
     }
     
     const char* val = get_variable_value(full_name);
@@ -311,6 +338,34 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
         if(tok->type == TOKEN_EOF) break;
         if(tok->type == TOKEN_SEMICOLON){ pc++; continue; }
         
+        if(tok->type == TOKEN_KEYWORD && (strcmp(tok->value, "structure") == 0 || strcmp(tok->value, "class") == 0)){
+            pc++; // Skip name
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_IDENTIFIER) pc++;
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_LBRACE){
+                pc++; int depth = 1;
+                while(pc < end_tok && depth > 0){
+                    if(g_tokens[pc].type == TOKEN_LBRACE) depth++;
+                    else if(g_tokens[pc].type == TOKEN_RBRACE) depth--;
+                    pc++;
+                }
+            }
+            continue;
+        }
+
+        if(tok->type == TOKEN_KEYWORD && strcmp(tok->value, "global_extentions") == 0){
+            pc++; // Skip name
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_IDENTIFIER) pc++;
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_LBRACE){
+                pc++; int depth = 1;
+                while(pc < end_tok && depth > 0){
+                    if(g_tokens[pc].type == TOKEN_LBRACE) depth++;
+                    else if(g_tokens[pc].type == TOKEN_RBRACE) depth--;
+                    pc++;
+                }
+            }
+            continue;
+        }
+
         if(tok->type == TOKEN_KEYWORD && strcmp(tok->value, "enum") == 0){
             pc++; // Skip enum name
             if(pc < end_tok && g_tokens[pc].type == TOKEN_IDENTIFIER) pc++;
@@ -364,6 +419,24 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                     free_variable(g_tokens[pc].value); pc++;
                 }
                 if(pc < end_tok && g_tokens[pc].type == TOKEN_RPAREN) pc++;
+            }
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_SEMICOLON) pc++;
+            continue;
+        }
+
+        if(tok->type == TOKEN_KEYWORD && strcmp(tok->value, "ss_input") == 0){
+            pc++;
+            if(pc < end_tok && g_tokens[pc].type == TOKEN_LPAREN){
+                pc++; char prompt[256] = {0};
+                if(pc < end_tok && g_tokens[pc].type == TOKEN_STRING){ strcpy(prompt, g_tokens[pc].value); pc++; }
+                if(pc < end_tok && g_tokens[pc].type == TOKEN_RPAREN) pc++;
+                printf("%s", prompt);
+                char input[256];
+                if(fgets(input, sizeof(input), stdin)){
+                    size_t len = strlen(input);
+                    if(len > 0 && input[len-1] == '\n') input[len-1] = '\0';
+                    strcpy(g_return_value, input);
+                }
             }
             if(pc < end_tok && g_tokens[pc].type == TOKEN_SEMICOLON) pc++;
             continue;
@@ -505,7 +578,7 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
              continue;
         }
 
-        if(tok->type == TOKEN_IDENTIFIER && strcmp(tok->value, "ctrlprog") == 0){
+        if(tok->type == TOKEN_IDENTIFIER && (strcmp(tok->value, "ctrlprog") == 0 || strcmp(tok->value, "crp") == 0)){
             if(pc + 2 < end_tok && g_tokens[pc+1].type == TOKEN_DOT){
                 pc += 2;
                 if(pc < end_tok && g_tokens[pc].type == TOKEN_IDENTIFIER){
@@ -520,7 +593,13 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
 #else
                             usleep(ms * 1000);
 #endif
-                        } else if(strcmp(method, "stop") == 0){
+                        } else if(strcmp(method, "stop") == 0 || strcmp(method, "EndRuntime") == 0){
+                            exit(0);
+                        } else if(strcmp(method, "EndRuntimeOutput") == 0){
+                            char msg[256] = {0};
+                            if(pc < end_tok && g_tokens[pc].type == TOKEN_STRING) { strcpy(msg, g_tokens[pc].value); pc++; }
+                            // Mock formatting support
+                            printf("%s\n", msg);
                             exit(0);
                         } else if(strcmp(method, "back") == 0){
                             int target_line = 0;
@@ -1010,7 +1089,25 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                                 set_variable("__last_ret", buf, TYPE_INTEGER, path, tok->line, tok->col);
                             } else if(strcmp(method, "bytes") == 0){
                                 set_variable("__last_ret", var->value, TYPE_STRING, path, tok->line, tok->col);
+                            } else if(strcmp(method, "addr") == 0){
+                                char buf[64]; snprintf(buf, sizeof(buf), "0x%p", (void*)var->value);
+                                set_variable("__last_ret", buf, TYPE_STRING, path, tok->line, tok->col);
+                            } else if(strcmp(method, "addToTable") == 0 && arg_count >= 1){
+                                // Mock table behavior: append to value
+                                strcat(var->value, "|"); strcat(var->value, args[0]);
+                            } else if(strcmp(method, "addToArray") == 0 && arg_count >= 1){
+                                // Mock array behavior: append to value
+                                strcat(var->value, ","); strcat(var->value, args[0]);
+                                if(arg_count >= 2){ strcat(var->value, ":"); strcat(var->value, args[1]); }
                             }
+                        }
+                    } else {
+                        // Property access
+                        if(strcmp(method, "addr") == 0){
+                            char buf[64]; snprintf(buf, sizeof(buf), "0x%p", (void*)var->value);
+                            set_variable("__last_ret", buf, TYPE_STRING, path, tok->line, tok->col);
+                        } else if(strcmp(method, "bytes") == 0){
+                            set_variable("__last_ret", var->value, TYPE_STRING, path, tok->line, tok->col);
                         }
                     }
                 }
