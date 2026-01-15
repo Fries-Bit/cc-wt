@@ -1,0 +1,17 @@
+print("=== Boolean Literals Test ===");
+
+bool t = true;
+bool f = false;
+
+print("true literal: {}", t);
+print("false literal: {}", f);
+
+if (true) {
+    print("if (true) executes");
+}
+
+if (false) {
+    print("if (false) should NOT print");
+}
+
+print("Boolean literals test completed");

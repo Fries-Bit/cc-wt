@@ -1,0 +1,8 @@
+integer a = 15;
+integer b = 4;
+print("a = {}, b = {}", a, b);
+print("a + b = {}", a + b);
+print("a - b = {}", a - b);
+print("a * b = {}", a * b);
+print("a / b = {}", a / b);
+print("a % b = {}", a % b);

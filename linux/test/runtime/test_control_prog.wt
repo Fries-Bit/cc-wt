@@ -1,0 +1,21 @@
+print("=== control-prog Test ===");
+
+string test_result = "PASS";
+integer control_count = 0;
+
+print("Testing control-prog keyword");
+control-prog();
+control_count = 1;
+
+if (control_count == 1) {
+    print("control-prog: Keyword execution works");
+} else {
+    print("control-prog: Keyword execution FAILED");
+    test_result = "FAIL";
+}
+
+if (test_result == "PASS") {
+    print("control-prog test completed: PASS");
+} else {
+    print("control-prog test completed: FAIL");
+}

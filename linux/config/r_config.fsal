@@ -1,0 +1,7 @@
+[dependencies]
+1_d = [
+   name = "Standard Library"
+   description = "The Standard Library for the Welt progrmaming language. (Optinal)"
+   version = 1
+   git = https://github.com/Fries-Bit/package-fsal-test
+]

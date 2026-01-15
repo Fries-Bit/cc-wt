@@ -1,0 +1,6 @@
+fn add(integer a, integer b) -> integer {
+    return a + b;
+}
+
+print("Testing function call:");
+print("Result: {}", add(5, 3));

@@ -1,0 +1,12 @@
+print("=== Class and ss Test ===");
+
+class MyClass {
+    integer value;
+}
+
+print("Class definition recognized");
+
+ss my_system_string = "System String";
+print("System string created: {}", my_system_string);
+
+print("Class and ss test completed");

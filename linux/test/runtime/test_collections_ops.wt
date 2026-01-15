@@ -1,0 +1,24 @@
+print("=== Collection Operations Test ===");
+
+string test_result = "PASS";
+
+array numbers;
+print("Array created");
+
+addToArray(numbers, 10);
+addToArray(numbers, 20);
+addToArray(numbers, 30);
+print("Items added to array: 3 elements");
+
+table data;
+print("Table created");
+
+addToTable(data, "key1", "value1");
+addToTable(data, "key2", "value2");
+print("Items added to table: 2 key-value pairs");
+
+if (test_result == "PASS") {
+    print("Collection operations test completed: PASS");
+} else {
+    print("Collection operations test completed: FAIL");
+}

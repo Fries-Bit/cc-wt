@@ -1,0 +1,14 @@
+print("=== Multiline and def Test ===");
+
+string text = multiline {
+    "This is a ",
+    "multiline string ",
+    "definition"
+};
+
+print("Multiline text: {}", text);
+
+def my_definition = "Some definition";
+print("Definition: {}", my_definition);
+
+print("Multiline and def test completed");

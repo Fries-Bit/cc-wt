@@ -1,0 +1,9 @@
+print("=== Struct Definition Test ===");
+
+struct Person {
+    string name;
+    integer age;
+}
+
+print("Struct definitions are recognized");
+print("Struct test completed");

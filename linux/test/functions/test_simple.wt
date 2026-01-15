@@ -1,0 +1,4 @@
+print("=== Function Definition Test ===");
+print("Functions can be defined with fn keyword");
+print("Example: fn add(integer a, integer b) -> integer { return a + b; }");
+print("Functions test completed");

@@ -1,18 +1,17 @@
 #include "internal.h"
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include <unistd.h>
+#include <sys/stat.h>
 
 int get_fsal_dir(char* out, size_t cap){
+    const char* home = getenv("HOME");
+    if(home) {
+        snprintf(out, cap, "%s/.fsal_root", home);
+        return 0;
+    }
     const char* up = getenv("USERPROFILE");
     if(up) {
         strncpy(out, up, cap-1);
         out[cap-1] = '\0';
-        return 0;
-    }
-    const char* app = getenv("APPDATA");
-    if(app) {
-        snprintf(out, cap, "%s\\FSAL", app);
         return 0;
     }
     strncpy(out, ".", cap-1);
@@ -42,10 +41,12 @@ int welt_run_code(const char* name, const char* code, int argc, const char** arg
 }
 
 int welt_inweld(const char* filePath, int argc, const char** argv){
+    printf("DEBUG: welt_inweld called for %s\n", filePath);
     char* code=0; size_t sz=0; 
     if(read_welt_file(filePath,&code,&sz)!=0){ fprintf(stderr,"welt: cannot read %s\n", filePath); return 1; }
     int rc = lexer_check(filePath, code);
     if(rc==0) {
+        printf("DEBUG: calling interpret\n");
         interpret(filePath, code, argc, argv); 
     }
     free(code);
@@ -57,12 +58,14 @@ int welt_cweld(const char* filePath, const char* outExeOpt){
     if(read_welt_file(filePath,&code,&sz)!=0){ fprintf(stderr,"cannot read %s\n", filePath); return 1; }
     int rc = lexer_check(filePath, code);
     if(rc!=0){ free(code); return 2; }
-    const char* out = outExeOpt? outExeOpt : "welt_prog.exe";
+    const char* out = outExeOpt? outExeOpt : "welt_prog";
     char selfPath[1024];
 #ifdef _WIN32
     GetModuleFileNameA(NULL, selfPath, sizeof(selfPath));
 #else
-    strcpy(selfPath, "fsal.exe");
+    ssize_t len = readlink("/proc/self/exe", selfPath, sizeof(selfPath)-1);
+    if(len != -1) selfPath[len] = '\0';
+    else strcpy(selfPath, "fsal");
 #endif
     FILE* src = fopen(selfPath, "rb");
     if(!src){ fprintf(stderr, "welt: cannot open self %s\n", selfPath); free(code); return 3; }

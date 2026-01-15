@@ -1,0 +1,29 @@
+fn add(integer a, integer b) -> integer {
+    return a + b;
+}
+
+print("=== Functions Test ===");
+integer result = add(10, 20);
+print("add(10, 20) = {}", result);
+
+fn greet(string name) -> string {
+    return "Hello, " + name;
+}
+
+string msg = greet("World");
+print("greet result: {}", msg);
+
+fn is_positive(integer n) -> bool {
+    if (n > 0) {
+        return true;
+    }
+    return false;
+}
+
+bool pos = is_positive(5);
+print("is_positive(5) = {}", pos);
+
+bool neg = is_positive(-3);
+print("is_positive(-3) = {}", neg);
+
+print("Functions test completed");

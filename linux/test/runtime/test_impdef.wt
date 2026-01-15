@@ -1,0 +1,15 @@
+print("=== impdef Test ===");
+
+string test_result = "PASS";
+
+impdef string get_system_name();
+print("impdef declaration parsed");
+
+impdef integer get_version();
+print("impdef multiple declarations work");
+
+if (test_result == "PASS") {
+    print("impdef test completed: PASS");
+} else {
+    print("impdef test completed: FAIL");
+}

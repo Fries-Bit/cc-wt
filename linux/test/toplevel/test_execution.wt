@@ -1,0 +1,21 @@
+print("=== Top-Level Execution Test ===");
+
+integer x = 42;
+string msg = "Hello from top-level";
+bool flag = true;
+
+print("x = {}", x);
+print("msg = {}", msg);
+print("flag = {}", flag);
+
+if (x > 40) {
+    print("x is greater than 40");
+}
+
+integer i = 0;
+while (i < 3) {
+    print("Loop iteration: {}", i);
+    i++;
+}
+
+print("Top-level execution test completed");

@@ -1,0 +1,21 @@
+print("=== Arithmetic Operators Test ===");
+
+integer a = 15;
+integer b = 4;
+
+print("a = {}, b = {}", a, b);
+print("a + b = {}", a + b);
+print("a - b = {}", a - b);
+print("a * b = {}", a * b);
+print("a / b = {}", a / b);
+print("a % b = {}", a % b);
+
+integer c = 5;
+c++;
+print("c after ++: {}", c);
+
+integer d = 10;
+d--;
+print("d after --: {}", d);
+
+print("Arithmetic operators test completed");

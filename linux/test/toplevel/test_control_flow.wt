@@ -1,0 +1,20 @@
+print("=== Control Flow Test ===");
+
+print("Testing if-else:");
+integer score = 75;
+if (score >= 80) {
+    print("Grade: A");
+} else if (score >= 70) {
+    print("Grade: B");
+} else {
+    print("Grade: C");
+}
+
+print("Testing for loop:");
+integer count = 0;
+while (count < 5) {
+    print("Count: {}", count);
+    count++;
+}
+
+print("Control flow test completed");

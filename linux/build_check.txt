@@ -1,0 +1,154 @@
+Generated fsal\config_embedded.h
+Building with GCC: C:\mingw64\bin\gcc.exe
+fsal/internal_core/config.c: In function 'parse_fsal_config':
+fsal/internal_core/config.c:20:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+   20 |         if(*p=='\n') p++; line[i]='\0';
+      |         ^~
+fsal/internal_core/config.c:20:27: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+   20 |         if(*p=='\n') p++; line[i]='\0';
+      |                           ^~~~
+fsal/internal_core/config.c: In function 'parse_fsal_deps':
+fsal/internal_core/config.c:69:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+   69 |         if(*p=='\n') p++; line[i]='\0';
+      |         ^~
+fsal/internal_core/config.c:69:27: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+   69 |         if(*p=='\n') p++; line[i]='\0';
+      |                           ^~~~
+fsal/internal_core/config.c:89:17: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+   89 |                 if(*p=='\n') p++; line[i]='\0';
+      |                 ^~
+fsal/internal_core/config.c:89:35: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+   89 |                 if(*p=='\n') p++; line[i]='\0';
+      |                                   ^~~~
+fsal/internal_core/config.c: In function 'parse_fsal_config':
+fsal/internal_core/config.c:50:43: warning: 'strncpy' output may be truncated copying 127 bytes from a string of length 255 [-Wstringop-truncation]
+   50 |         else if(strcmp(key,"cmduse")==0){ strncpy(outCfg->cmduse,val,sizeof(outCfg->cmduse)-1); }
+      |                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/internal_core/config.c:49:36: warning: 'strncpy' output may be truncated copying 127 bytes from a string of length 255 [-Wstringop-truncation]
+   49 |         if(strcmp(key,"name")==0){ strncpy(outCfg->name,val,sizeof(outCfg->name)-1); }
+      |                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/internal_core/config.c: In function 'parse_fsal_deps':
+fsal/internal_core/config.c:123:50: warning: 'strncpy' output may be truncated copying 255 bytes from a string of length 255 [-Wstringop-truncation]
+  123 |                 else if(strcmp(key, "git") == 0) strncpy(d->git, val, sizeof(d->git)-1);
+      |                                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/internal_core/config.c:121:58: warning: 'strncpy' output may be truncated copying 255 bytes from a string of length 255 [-Wstringop-truncation]
+  121 |                 else if(strcmp(key, "description") == 0) strncpy(d->description, val, sizeof(d->description)-1);
+      |                                                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/internal_core/config.c:120:46: warning: 'strncpy' output may be truncated copying 127 bytes from a string of length 255 [-Wstringop-truncation]
+  120 |                 if(strcmp(key, "name") == 0) strncpy(d->name, val, sizeof(d->name)-1);
+      |                                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/compiler/interpreter.c: In function 'execute_code_block':
+src/compiler/interpreter.c:746:33: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  746 |                                 if(s) strcpy(section, s); pc++;
+      |                                 ^~
+src/compiler/interpreter.c:746:59: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  746 |                                 if(s) strcpy(section, s); pc++;
+      |                                                           ^~
+src/compiler/interpreter.c:751:33: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  751 |                                 if(k) strcpy(key, k); pc++;
+      |                                 ^~
+src/compiler/interpreter.c:751:55: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  751 |                                 if(k) strcpy(key, k); pc++;
+      |                                                       ^~
+src/compiler/interpreter.c:843:17: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  843 |                 if(pc < end_tok) pc++; continue;
+      |                 ^~
+src/compiler/interpreter.c:843:40: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  843 |                 if(pc < end_tok) pc++; continue;
+      |                                        ^~~~~~~~
+src/compiler/interpreter.c:890:25: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  890 |                         if(s) strcpy(section, s); pc++;
+      |                         ^~
+src/compiler/interpreter.c:890:51: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  890 |                         if(s) strcpy(section, s); pc++;
+      |                                                   ^~
+src/compiler/interpreter.c:895:25: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  895 |                         if(k) strcpy(key, k); pc++;
+      |                         ^~
+src/compiler/interpreter.c:895:47: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  895 |                         if(k) strcpy(key, k); pc++;
+      |                                               ^~
+src/compiler/interpreter.c:958:13: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  958 |             if(pc < end_tok) pc++; continue;
+      |             ^~
+src/compiler/interpreter.c:958:36: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  958 |             if(pc < end_tok) pc++; continue;
+      |                                    ^~~~~~~~
+src/compiler/interpreter.c:860:37: warning: unused variable 'result' [-Wunused-variable]
+  860 |             int is_math = 0; double result = 0;
+      |                                     ^~~~~~
+src/compiler/interpreter.c:860:17: warning: unused variable 'is_math' [-Wunused-variable]
+  860 |             int is_math = 0; double result = 0;
+      |                 ^~~~~~~
+src/compiler/interpreter.c:1004:17: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+ 1004 |                 if(pc < end_tok) pc++; continue;
+      |                 ^~
+src/compiler/interpreter.c:1004:40: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+ 1004 |                 if(pc < end_tok) pc++; continue;
+      |                                        ^~~~~~~~
+src/compiler/interpreter.c:1014:21: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+ 1014 |                     if(v) strcpy(code, v); pc++;
+      |                     ^~
+src/compiler/interpreter.c:1014:44: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+ 1014 |                     if(v) strcpy(code, v); pc++;
+      |                                            ^~
+src/compiler/interpreter.c:1209:13: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+ 1209 |             if(pc < end_tok) pc++; continue;
+      |             ^~
+src/compiler/interpreter.c:1209:36: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+ 1209 |             if(pc < end_tok) pc++; continue;
+      |                                    ^~~~~~~~
+fsal/fsal.c: In function 'appdata_fsaldir.part.0.constprop':
+fsal/fsal.c:27:31: warning: '\FSAL' directive output may be truncated writing 5 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+   27 |         snprintf(out, cap, "%s\\FSAL", app);
+      |                               ^~~~~~
+fsal/fsal.c:27:9: note: 'snprintf' output between 6 and 517 bytes into a destination of size 512
+   27 |         snprintf(out, cap, "%s\\FSAL", app);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/fsal.c: In function 'cmd_unpack':
+fsal/fsal.c:76:69: warning: '\*' directive output may be truncated writing 2 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+   76 |     WIN32_FIND_DATAA fd; char pat[512]; snprintf(pat,sizeof(pat),"%s\\*", dir);
+      |                                                                     ^~~
+In function 'find_config_in_extracted',
+    inlined from 'cmd_unpack' at fsal/fsal.c:127:37:
+fsal/fsal.c:76:41: note: 'snprintf' output between 3 and 514 bytes into a destination of size 512
+   76 |     WIN32_FIND_DATAA fd; char pat[512]; snprintf(pat,sizeof(pat),"%s\\*", dir);
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/fsal.c: In function 'cmd_unpack':
+fsal/fsal.c:82:61: warning: '%s' directive output may be truncated writing up to 259 bytes into a region of size between 0 and 511 [-Wformat-truncation=]
+   82 |             char root[512]; snprintf(root,sizeof(root),"%s\\%s", dir, fd.cFileName);
+      |                                                             ^~        ~~~~~~~~~~~~
+In function 'find_config_in_extracted',
+    inlined from 'cmd_unpack' at fsal/fsal.c:127:37:
+fsal/fsal.c:82:29: note: 'snprintf' output between 2 and 772 bytes into a destination of size 512
+   82 |             char root[512]; snprintf(root,sizeof(root),"%s\\%s", dir, fd.cFileName);
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/fsal.c: In function 'cmd_unpack':
+fsal/fsal.c:83:53: warning: '\.fsal\config.fsal' directive output may be truncated writing 18 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+   83 |             char cf[512]; snprintf(cf,sizeof(cf),"%s\\.fsal\\config.fsal", root);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~
+In function 'find_config_in_extracted',
+    inlined from 'cmd_unpack' at fsal/fsal.c:127:37:
+fsal/fsal.c:83:27: note: 'snprintf' output between 19 and 530 bytes into a destination of size 512
+   83 |             char cf[512]; snprintf(cf,sizeof(cf),"%s\\.fsal\\config.fsal", root);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/fsal.c: In function 'cmd_unpack':
+fsal/fsal.c:135:65: warning: '%s' directive output may be truncated writing up to 511 bytes into a region of size between 500 and 1011 [-Wformat-truncation=]
+  135 |     char cmd[1024]; snprintf(cmd,sizeof(cmd),"robocopy \"%s\" \"%s\" /MIR /NFL /NDL /NJH /NJS /nc /ns /np", pkgRoot, dest);
+      |                                                                 ^~                                                   ~~~~
+fsal/fsal.c:135:21: note: 'snprintf' output between 52 and 1074 bytes into a destination of size 1024
+  135 |     char cmd[1024]; snprintf(cmd,sizeof(cmd),"robocopy \"%s\" \"%s\" /MIR /NFL /NDL /NJH /NJS /nc /ns /np", pkgRoot, dest);
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/fsal.c:137:72: warning: '\.fsal\' directive output may be truncated writing 7 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  137 |     char providedCmd[512]; snprintf(providedCmd,sizeof(providedCmd),"%s\\.fsal\\%s", dest, fc.cmduse);
+      |                                                                        ^~~~~~~~~
+fsal/fsal.c:137:28: note: 'snprintf' output between 8 and 646 bytes into a destination of size 512
+  137 |     char providedCmd[512]; snprintf(providedCmd,sizeof(providedCmd),"%s\\.fsal\\%s", dest, fc.cmduse);
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+fsal/fsal.c:140:58: warning: '\run.wt' directive output may be truncated writing 7 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  140 |         char runwt[512]; snprintf(runwt,sizeof(runwt),"%s\\run.wt", dest);
+      |                                                          ^~~~~~~~
+fsal/fsal.c:140:26: note: 'snprintf' output between 8 and 519 bytes into a destination of size 512
+  140 |         char runwt[512]; snprintf(runwt,sizeof(runwt),"%s\\run.wt", dest);
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Build succeeded.

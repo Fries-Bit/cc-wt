@@ -1,0 +1,4 @@
+string cfg = "config/r_config.fsal";
+string name = "";
+name = cfg.get("dependencies", "name");
+print("Dep Name: {}", name);

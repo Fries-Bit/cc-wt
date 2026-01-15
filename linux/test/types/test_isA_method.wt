@@ -1,0 +1,13 @@
+string name = "Alice";
+integer age = 30;
+float height = 5.8;
+bool active = true;
+
+print("name.isA(string): {}", name.isA(string));
+print("name.isA(integer): {}", name.isA(integer));
+print("age.isA(integer): {}", age.isA(integer));
+print("age.isA(string): {}", age.isA(string));
+print("height.isA(float): {}", height.isA(float));
+print("height.isA(integer): {}", height.isA(integer));
+print("active.isA(bool): {}", active.isA(bool));
+print("active.isA(string): {}", active.isA(string));

@@ -1,0 +1,7 @@
+print("=== Escape Sequences Test ===");
+print("Newline test:\nSecond line");
+print("Tab test:\there");
+print("Backslash: \\");
+print("Quote: \"Hello\"");
+print("Multiple escapes:\nTab:\there\nBackslash: \\");
+print("=== Test Completed ===");

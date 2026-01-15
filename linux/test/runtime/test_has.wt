@@ -1,0 +1,30 @@
+print("=== has Operator Test ===");
+
+string test_result = "PASS";
+integer table_count = 0;
+
+table data;
+addToTable(data, "name", "John");
+table_count = 1;
+
+if (table_count == 1) {
+    print("has: Table created and populated");
+} else {
+    print("has: Table creation FAILED");
+    test_result = "FAIL";
+}
+
+addToTable(data, "age", "30");
+table_count = 2;
+
+if (table_count == 2) {
+    print("has: Multiple entries added");
+} else {
+    test_result = "FAIL";
+}
+
+if (test_result == "PASS") {
+    print("has operator test completed: PASS");
+} else {
+    print("has operator test completed: FAIL");
+}

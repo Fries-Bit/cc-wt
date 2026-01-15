@@ -1,0 +1,7 @@
+fn add(a: integer, b: integer) -> integer {
+    return a + b;
+}
+
+integer result = add(10, 5);
+print("Result: ");
+print(result);

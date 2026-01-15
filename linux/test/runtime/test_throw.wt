@@ -1,0 +1,8 @@
+print("=== Throw Test ===");
+
+string error_message = "Test error";
+print("Error message prepared");
+
+print("About to throw with message");
+Throw(error_message);
+print("After throw - should not print if throw works correctly");

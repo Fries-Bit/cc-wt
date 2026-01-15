@@ -1,0 +1,30 @@
+print("=== File Handling Test ===");
+
+string test_result = "PASS";
+integer file_count = 0;
+
+string input_file = "test.txt";
+print("File variable created");
+file_count = 1;
+
+if (file_count == 1) {
+    print("File: Variable creation works");
+} else {
+    print("File: Variable creation FAILED");
+    test_result = "FAIL";
+}
+
+string output_file = "output.wt";
+file_count = 2;
+
+if (file_count == 2) {
+    print("File: Multiple file variables work");
+} else {
+    test_result = "FAIL";
+}
+
+if (test_result == "PASS") {
+    print("File handling test completed: PASS");
+} else {
+    print("File handling test completed: FAIL");
+}

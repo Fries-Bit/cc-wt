@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <direct.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
-#include "platform_win.h"
+#include "platform.h"
 #include "zipwrap_ps.h"
 #include "fsnet.h"
 #include "config.h"
@@ -13,10 +15,9 @@
 #include "config_embedded.h"
 
 static void appdata_fsaldir(char* out, size_t cap){
-    const char* up = getenv("USERPROFILE");
-    if(up) {
-        strncpy(out, up, cap-1);
-        out[cap-1] = '\0';
+    const char* home = getenv("HOME");
+    if(home) {
+        snprintf(out, cap, "%s/.fsal_root", home);
     } else {
         char app[512]; 
         if(pw_get_appdata(app,sizeof(app))!=0){ 
@@ -24,21 +25,21 @@ static void appdata_fsaldir(char* out, size_t cap){
             out[cap-1] = '\0';
             return; 
         }
-        snprintf(out, cap, "%s\\FSAL", app);
+        snprintf(out, cap, "%s/FSAL", app);
     }
 }
 
 static int is_welt_unpacked() {
     char root[512]; appdata_fsaldir(root, sizeof(root));
     char bin[512], inweld[512], cweld[512];
-    pw_join(root, ".fsal\\bin", bin, sizeof(bin));
-    pw_join(bin, "inweld.cmd", inweld, sizeof(inweld));
-    pw_join(bin, "cweld.cmd", cweld, sizeof(cweld));
+    pw_join(root, ".fsal/bin", bin, sizeof(bin));
+    pw_join(bin, "inweld", inweld, sizeof(inweld));
+    pw_join(bin, "cweld", cweld, sizeof(cweld));
     return pw_file_exists(inweld) && pw_file_exists(cweld);
 }
 
 static void usage(){
-    printf("%s%sFSAL CLI%s\n", FSAL_COLOR_BOLD, FSAL_COLOR_CYAN, FSAL_COLOR_RESET);
+    printf("%s%sFSAL CLI (Linux)%s\n", FSAL_COLOR_BOLD, FSAL_COLOR_CYAN, FSAL_COLOR_RESET);
     printf("Usage:\n");
     printf("  fsal unpack <user/repo> or <git repo url>\n");
     if(is_welt_unpacked()) {
@@ -51,44 +52,46 @@ static int ensure_runtime_layout(char* rootOut, size_t cap){
     if(pw_ensure_dir(root)!=0) return -1;
     char p[512];
     pw_join(root, ".fsal", p, sizeof(p)); pw_ensure_dir(p);
-    pw_join(root, ".fsal\\bin", p, sizeof(p)); pw_ensure_dir(p);
-    pw_join(root, ".fsal\\welt", p, sizeof(p)); pw_ensure_dir(p);
+    pw_join(root, ".fsal/bin", p, sizeof(p)); pw_ensure_dir(p);
+    pw_join(root, ".fsal/welt", p, sizeof(p)); pw_ensure_dir(p);
     if(rootOut) snprintf(rootOut,cap,"%s", root);
     return 0;
 }
 
 static int register_command_shim(const char* cmd, const char* targetExe, const char* extraArgs){
     char root[512]; appdata_fsaldir(root,sizeof(root));
-    char bin[512]; pw_join(root, ".fsal\\bin", bin, sizeof(bin));
+    char bin[512]; pw_join(root, ".fsal/bin", bin, sizeof(bin));
     if(pw_ensure_dir(bin)!=0) return -1; 
-    char shimFile[512]; char tmp[256]; snprintf(tmp,sizeof(tmp),"%s.cmd", cmd);
-    pw_join(bin, tmp, shimFile, sizeof(shimFile));
+    char shimFile[512];
+    pw_join(bin, cmd, shimFile, sizeof(shimFile));
     char body[4096];
-    if(extraArgs && extraArgs[0]) snprintf(body,sizeof(body), "@echo off\r\nsetlocal enabledelayedexpansion\r\n\"%s\" %s %%*\r\nendlocal\r\n", targetExe, extraArgs);
-    else snprintf(body,sizeof(body), "@echo off\r\nsetlocal enabledelayedexpansion\r\n\"%s\" %%*\r\nendlocal\r\n", targetExe);
+    if(extraArgs && extraArgs[0]) snprintf(body,sizeof(body), "#!/bin/bash\n\"%s\" %s \"$@\"\n", targetExe, extraArgs);
+    else snprintf(body,sizeof(body), "#!/bin/bash\n\"%s\" \"$@\"\n", targetExe);
     int rc = pw_write_text(shimFile, body);
     if(rc!=0) return rc;
+    chmod(shimFile, 0755);
     pw_add_to_user_path(bin, NULL, 0);
     return 0;
 }
 
 static int find_config_in_extracted(const char* dir, char* cfgPath, size_t cfgCap, char* pkgRoot, size_t pkgCap){
-    WIN32_FIND_DATAA fd; char pat[512]; snprintf(pat,sizeof(pat),"%s\\*", dir);
-    HANDLE h = FindFirstFileA(pat,&fd); if(h==INVALID_HANDLE_VALUE) return -1;
+    DIR* d = opendir(dir);
+    if(!d) return -1;
+    struct dirent* de;
     int rc=-1;
-    do {
-        if(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-            if(strcmp(fd.cFileName,".")==0||strcmp(fd.cFileName,"..")==0) continue;
-            char root[512]; snprintf(root,sizeof(root),"%s\\%s", dir, fd.cFileName);
-            char cf[512]; snprintf(cf,sizeof(cf),"%s\\.fsal\\config.fsal", root);
+    while((de = readdir(d)) != NULL){
+        if(de->d_type == DT_DIR){
+            if(strcmp(de->d_name,".")==0||strcmp(de->d_name,"..")==0) continue;
+            char root[512]; snprintf(root,sizeof(root),"%s/%s", dir, de->d_name);
+            char cf[512]; snprintf(cf,sizeof(cf),"%s/.fsal/config.fsal", root);
             if(pw_file_exists(cf)){
                 snprintf(cfgPath,cfgCap,"%s", cf);
                 snprintf(pkgRoot,pkgCap,"%s", root);
                 rc=0; break;
             }
         }
-    } while(FindNextFileA(h,&fd));
-    FindClose(h);
+    }
+    closedir(d);
     return rc;
 }
 
@@ -96,11 +99,20 @@ static void dl_progress(size_t current, size_t total, void* userdata) {
     ui_loading_bar(current, total, (const char*)userdata);
 }
 
+static int get_self_exe(char* out, size_t cap){
+    ssize_t len = readlink("/proc/self/exe", out, cap - 1);
+    if (len != -1) {
+        out[len] = '\0';
+        return 0;
+    }
+    return -1;
+}
+
 static int cmd_unpack(int argc, char** argv){
     if(argc<3){ ui_print_error("unpack: missing repo url or 'welt'"); return 1; }
     char root[512]; if(ensure_runtime_layout(root,sizeof(root))!=0){ ui_print_error("runtime layout failed"); return 2; }
     if(strcmp(argv[2],"welt")==0){
-        char self[512]; GetModuleFileNameA(NULL, self, sizeof(self));
+        char self[512]; if(get_self_exe(self, sizeof(self)) != 0) strcpy(self, argv[0]);
         if(register_command_shim("inweld", self, "welt inweld")!=0) return 3;
         if(register_command_shim("cweld", self, "welt cweld")!=0) return 3;
         ui_print_step("Unpacked", "welt");
@@ -132,14 +144,17 @@ static int cmd_unpack(int argc, char** argv){
     free(cfgText);
     char fsalDir[512]; pw_join(root, ".fsal", fsalDir, sizeof(fsalDir));
     char dest[512]; pw_join(fsalDir, fc.name, dest, sizeof(dest)); pw_ensure_dir(dest);
-    char cmd[1024]; snprintf(cmd,sizeof(cmd),"robocopy \"%s\" \"%s\" /MIR /NFL /NDL /NJH /NJS /nc /ns /np", pkgRoot, dest);
+    char cmd[1024]; snprintf(cmd,sizeof(cmd),"cp -R \"%s/.\" \"%s\"", pkgRoot, dest);
     pw_shell(cmd,NULL,0);
-    char providedCmd[512]; snprintf(providedCmd,sizeof(providedCmd),"%s\\.fsal\\%s", dest, fc.cmduse);
-    if(pw_file_exists(providedCmd)) register_command_shim(fc.cmduse, providedCmd, NULL);
+    char providedCmd[512]; snprintf(providedCmd,sizeof(providedCmd),"%s/.fsal/%s", dest, fc.cmduse);
+    if(pw_file_exists(providedCmd)) {
+        chmod(providedCmd, 0755);
+        register_command_shim(fc.cmduse, providedCmd, NULL);
+    }
     else {
-        char runwt[512]; snprintf(runwt,sizeof(runwt),"%s\\run.wt", dest);
+        char runwt[512]; snprintf(runwt,sizeof(runwt),"%s/run.wt", dest);
         if(pw_file_exists(runwt)){
-            char self[512]; GetModuleFileNameA(NULL, self, sizeof(self));
+            char self[512]; if(get_self_exe(self, sizeof(self)) != 0) strcpy(self, argv[0]);
             char args[1024]; snprintf(args,sizeof(args),"welt inweld \"%s\"", runwt);
             register_command_shim(fc.cmduse, self, args);
         }
@@ -151,10 +166,6 @@ static int cmd_unpack(int argc, char** argv){
 static int dispatch_welt(int argc, char** argv){
     if(argc<2){ usage(); return 1; }
     if(strcmp(argv[1],"welt")==0){
-        /*if(!is_welt_unpacked()){
-            ui_print_error("Welt is not unpacked. Run 'fsal unpack welt' first.");
-            return 1;
-        }*/
         if(argc<3){ fprintf(stderr,"welt: missing subcommand (inweld|cweld)\n"); return 1; }
         if(strcmp(argv[2],"inweld")==0){ if(argc<4){ fprintf(stderr,"inweld: need file.wt\n"); return 1;} return welt_inweld(argv[3], argc-4, (const char**)(argv+4)); }
         if(strcmp(argv[2],"cweld")==0){ if(argc<4){ fprintf(stderr,"cweld: need file.wt\n"); return 1;} const char* out=NULL; if(argc>=6 && strcmp(argv[4],"-into")==0) out=argv[5]; return welt_cweld(argv[3], out); }
@@ -165,7 +176,7 @@ static int dispatch_welt(int argc, char** argv){
 
 static int check_and_run_embedded(int argc, char** argv){
     char selfPath[1024];
-    if(GetModuleFileNameA(NULL, selfPath, sizeof(selfPath)) == 0) return -1;
+    if(get_self_exe(selfPath, sizeof(selfPath)) != 0) return -1;
     FILE* self = fopen(selfPath, "rb");
     if(!self) return -1;
     fseek(self, 0, SEEK_END); long fileSize = ftell(self); fseek(self, 0, SEEK_SET);
@@ -184,13 +195,13 @@ static int check_and_run_embedded(int argc, char** argv){
 
 static int installer_main(const char* exe) {
     ui_print_step("Installing", "FSAL Runtime");
-    const char* up = getenv("USERPROFILE");
+    const char* home = getenv("HOME");
     char defDir[512];
-    if (up) snprintf(defDir, sizeof(defDir), "%s", up);
+    if (home) snprintf(defDir, sizeof(defDir), "%s/.fsal_root", home);
     else {
         char app[512]; 
         if (pw_get_appdata(app, sizeof(app)) != 0) { strcpy(app, "."); }
-        snprintf(defDir, sizeof(defDir), "%s\\FSAL", app);
+        snprintf(defDir, sizeof(defDir), "%s/FSAL", app);
     }
     char dir[512];
     printf("Install directory [%s]: ", defDir);
@@ -205,23 +216,25 @@ static int installer_main(const char* exe) {
         return 1;
     }
     
-    char dstFsal[512]; pw_join(dir, "fsal.exe", dstFsal, sizeof(dstFsal));
+    char dstFsal[512]; pw_join(dir, "fsal", dstFsal, sizeof(dstFsal));
     
-    ui_print_step("Setting up", "fsal.exe");
+    ui_print_step("Setting up", "fsal");
     
     char cmd[2048];
-    snprintf(cmd, sizeof(cmd), "powershell -NoProfile -Command \"Copy-Item -Force -LiteralPath '%s' -Destination '%s'\"", exe, dstFsal);
+    snprintf(cmd, sizeof(cmd), "cp -f \"%s\" \"%s\"", exe, dstFsal);
     int fsal_ready = (pw_shell(cmd, NULL, 0) == 0);
+    if(fsal_ready) chmod(dstFsal, 0755);
     
-    char bin[512]; pw_join(dir, ".fsal\\bin", bin, sizeof(bin));
+    char bin[512]; pw_join(dir, ".fsal/bin", bin, sizeof(bin));
     pw_ensure_dir(bin);
     char err[256];
     if (pw_add_to_user_path(bin, err, sizeof(err)) != 0) {
         ui_print_warning("Failed to add to PATH");
     }
-    char shim[512]; pw_join(bin, "fsal.cmd", shim, sizeof(shim));
-    char body[1024]; snprintf(body, sizeof(body), "@echo off\r\n\"%s\" %%*\r\n", dstFsal);
+    char shim[512]; pw_join(bin, "fsal", shim, sizeof(shim));
+    char body[1024]; snprintf(body, sizeof(body), "#!/bin/bash\n\"%s\" \"$@\"\n", dstFsal);
     pw_write_text(shim, body);
+    chmod(shim, 0755);
     
     if (fsal_ready) {
         FsalDep deps[10];
@@ -248,7 +261,7 @@ static int installer_main(const char* exe) {
 int main(int argc, char** argv){
     if(argc == 1) {
         char exe[512];
-        GetModuleFileNameA(NULL, exe, sizeof(exe));
+        if(get_self_exe(exe, sizeof(exe)) != 0) strcpy(exe, argv[0]);
         return installer_main(exe);
     }
     int embedded = check_and_run_embedded(argc, argv);

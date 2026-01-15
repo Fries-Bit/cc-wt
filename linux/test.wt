@@ -1,0 +1,9 @@
+fn main() {
+    global_extentions lick {
+        return {
+            print("WHAT");
+        }
+    }
+    string hello = "world";
+    hello.lick();
+}

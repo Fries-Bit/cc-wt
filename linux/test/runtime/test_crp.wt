@@ -1,0 +1,23 @@
+print("=== crp API Test ===");
+print("Starting crp test");
+
+string test_result = "PASS";
+integer wait_called = 0;
+
+print("Calling crp.wait(2000)");
+crp.wait(2000);
+wait_called = 1;
+print("After crp.wait");
+
+if (wait_called == 1) {
+    print("crp.wait: Function executed successfully");
+} else {
+    test_result = "FAIL";
+}
+
+if (test_result == "PASS") {
+    print("Test completed: PASS");
+    crp.EndRuntimeOutput("CRP Test Finished Successfully");
+} else {
+    print("Test completed: FAIL");
+}

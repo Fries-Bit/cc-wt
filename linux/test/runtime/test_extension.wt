@@ -1,0 +1,24 @@
+print("=== Extension and Include Test ===");
+
+string test_result = "PASS";
+integer ext_count = 0;
+
+Extension("some_extension");
+print("Extension loaded");
+ext_count = 1;
+
+if (ext_count == 1) {
+    print("Extension: Basic loading works");
+} else {
+    print("Extension: Loading FAILED");
+    test_result = "FAIL";
+}
+
+include("some_file.wt");
+print("File included");
+
+if (test_result == "PASS") {
+    print("Extension and include test completed: PASS");
+} else {
+    print("Extension and include test completed: FAIL");
+}

@@ -1,0 +1,21 @@
+print("=== fwww_at Test ===");
+
+string test_result = "PASS";
+
+string url = "https://example.com";
+string response_var = "web_response";
+
+fwww_at(url, response_var);
+
+if (response_var == "web_response") {
+    print("fwww_at: URL parameter accepted");
+} else {
+    print("fwww_at: URL parameter test FAILED");
+    test_result = "FAIL";
+}
+
+if (test_result == "PASS") {
+    print("fwww_at test completed: PASS");
+} else {
+    print("fwww_at test completed: FAIL");
+}

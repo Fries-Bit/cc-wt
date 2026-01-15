@@ -44,7 +44,7 @@ if %ERRORLEVEL%==0 (
   set CFLAGS=-O2 -Wall -D_CRT_SECURE_NO_WARNINGS %INC_FSAL% %INC_WELT%
   set LDFLAGS=-lwinhttp -lws2_32 -lole32 -lshell32 -luser32 -ladvapi32
   
-  "!GCC_BIN!" !CFLAGS! %FSAL_DEPS:\=/% %WELT_OBJS:\=/% fsal/fsal.c -o "%OUT%\i-fsal.exe" !LDFLAGS!
+  "!GCC_BIN!" !CFLAGS! %FSAL_DEPS:\=/% %WELT_OBJS:\=/% fsal/fsal.c -o "%OUT%\fsal.exe" !LDFLAGS!
   if errorlevel 1 goto :build_fail
   
   goto :build_ok

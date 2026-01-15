@@ -1,0 +1,8 @@
+fn main() {
+    print("Testing imp.lib");
+    imp.lib {
+        "test_lib.wt"
+    }
+    lib_func();
+    print("imp.lib test PASS");
+}

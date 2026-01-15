@@ -1,0 +1,7 @@
+fn lib_func() {
+    print("lib_func called");
+}
+
+fn main() {
+    lib_func();
+}

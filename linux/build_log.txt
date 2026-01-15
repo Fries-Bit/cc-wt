@@ -1,0 +1,111 @@
+Building with GCC: C:\mingw64\bin\gcc.exe
+platform/platform_win.c: In function 'safe_strcpy':
+platform/platform_win.c:9:5: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+    9 |     if(!dst||!cap)return; dst[0]='\0'; if(!src)return; strncpy(dst, src, cap-1); dst[cap-1]='\0';
+      |     ^~
+platform/platform_win.c:9:27: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+    9 |     if(!dst||!cap)return; dst[0]='\0'; if(!src)return; strncpy(dst, src, cap-1); dst[cap-1]='\0';
+      |                           ^~~
+platform/platform_win.c: In function 'pw_join':
+platform/platform_win.c:110:10: warning: unused variable 'sep' [-Wunused-variable]
+  110 |     char sep = '\\';
+      |          ^~~
+core/config.c: In function 'parse_fsal_config':
+core/config.c:20:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+   20 |         if(*p=='\n') p++; line[i]='\0';
+      |         ^~
+core/config.c:20:27: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+   20 |         if(*p=='\n') p++; line[i]='\0';
+      |                           ^~~~
+core/config.c:44:43: warning: 'strncpy' output may be truncated copying 127 bytes from a string of length 255 [-Wstringop-truncation]
+   44 |         else if(strcmp(key,"cmduse")==0){ strncpy(outCfg->cmduse,val,sizeof(outCfg->cmduse)-1); }
+      |                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+core/config.c:43:36: warning: 'strncpy' output may be truncated copying 127 bytes from a string of length 255 [-Wstringop-truncation]
+   43 |         if(strcmp(key,"name")==0){ strncpy(outCfg->name,val,sizeof(outCfg->name)-1); }
+      |                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+welt/welt.c: In function 'parse_decl_or_assign':
+welt/welt.c:188:23: warning: variable 'knownIdx' set but not used [-Wunused-but-set-variable]
+  188 |     int isType=0; int knownIdx=-1; for(int i=0;i<4;i++){ if(strcmp(word,types[i])==0){ isType=1; knownIdx=i; break; } }
+      |                       ^~~~~~~~
+welt/welt.c: In function 'interpret':
+welt/welt.c:304:26: warning: unused variable 'line' [-Wunused-variable]
+  304 |     const char* p=b; int line=1; // relative line inside main for caret context; we also need absolute line: calculate from src
+      |                          ^~~~
+welt/welt.c: In function 'welt_cweld':
+welt/welt.c:387:5: error: unknown type name 'uint32_t'
+  387 |     uint32_t magic = 0x544C5750;
+      |     ^~~~~~~~
+welt/welt.c:5:1: note: 'uint32_t' is defined in header '<stdint.h>'; this is probably fixable by adding '#include <stdint.h>'
+    4 | #include <ctype.h>
+  +++ |+#include <stdint.h>
+    5 | 
+welt/welt.c:389:5: error: unknown type name 'uint32_t'
+  389 |     uint32_t codeSize = (uint32_t)sz;
+      |     ^~~~~~~~
+welt/welt.c:389:5: note: 'uint32_t' is defined in header '<stdint.h>'; this is probably fixable by adding '#include <stdint.h>'
+welt/welt.c:389:26: error: 'uint32_t' undeclared (first use in this function)
+  389 |     uint32_t codeSize = (uint32_t)sz;
+      |                          ^~~~~~~~
+welt/welt.c:389:26: note: 'uint32_t' is defined in header '<stdint.h>'; this is probably fixable by adding '#include <stdint.h>'
+welt/welt.c:389:26: note: each undeclared identifier is reported only once for each function it appears in
+welt/welt.c:389:35: error: expected ',' or ';' before 'sz'
+  389 |     uint32_t codeSize = (uint32_t)sz;
+      |                                   ^~
+welt/welt.c: At top level:
+welt/welt.c:25:12: warning: 'is_valid_type' defined but not used [-Wunused-function]
+   25 | static int is_valid_type(const char* type){
+      |            ^~~~~~~~~~~~~
+cli/fsal.c: In function 'appdata_fsaldir.constprop':
+cli/fsal.c:23:25: warning: '\FSAL' directive output may be truncated writing 5 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+   23 |     snprintf(out,cap,"%s\\FSAL", app);
+      |                         ^~~~~~
+cli/fsal.c:23:5: note: 'snprintf' output between 6 and 517 bytes into a destination of size 512
+   23 |     snprintf(out,cap,"%s\\FSAL", app);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cli/fsal.c: In function 'cmd_unpack':
+cli/fsal.c:58:69: warning: '\*' directive output may be truncated writing 2 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+   58 |     WIN32_FIND_DATAA fd; char pat[512]; snprintf(pat,sizeof(pat),"%s\\*", dir);
+      |                                                                     ^~~
+In function 'find_config_in_extracted',
+    inlined from 'cmd_unpack' at cli/fsal.c:97:37:
+cli/fsal.c:58:41: note: 'snprintf' output between 3 and 514 bytes into a destination of size 512
+   58 |     WIN32_FIND_DATAA fd; char pat[512]; snprintf(pat,sizeof(pat),"%s\\*", dir);
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cli/fsal.c: In function 'cmd_unpack':
+cli/fsal.c:64:61: warning: '%s' directive output may be truncated writing up to 259 bytes into a region of size between 0 and 511 [-Wformat-truncation=]
+   64 |             char root[512]; snprintf(root,sizeof(root),"%s\\%s", dir, fd.cFileName);
+      |                                                             ^~        ~~~~~~~~~~~~
+In function 'find_config_in_extracted',
+    inlined from 'cmd_unpack' at cli/fsal.c:97:37:
+cli/fsal.c:64:29: note: 'snprintf' output between 2 and 772 bytes into a destination of size 512
+   64 |             char root[512]; snprintf(root,sizeof(root),"%s\\%s", dir, fd.cFileName);
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cli/fsal.c: In function 'cmd_unpack':
+cli/fsal.c:65:53: warning: '\.fsal\config.fsal' directive output may be truncated writing 18 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+   65 |             char cf[512]; snprintf(cf,sizeof(cf),"%s\\.fsal\\config.fsal", root);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~
+In function 'find_config_in_extracted',
+    inlined from 'cmd_unpack' at cli/fsal.c:97:37:
+cli/fsal.c:65:27: note: 'snprintf' output between 19 and 530 bytes into a destination of size 512
+   65 |             char cf[512]; snprintf(cf,sizeof(cf),"%s\\.fsal\\config.fsal", root);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cli/fsal.c: In function 'cmd_unpack':
+cli/fsal.c:109:65: warning: '%s' directive output may be truncated writing up to 511 bytes into a region of size between 500 and 1011 [-Wformat-truncation=]
+  109 |     char cmd[1024]; snprintf(cmd,sizeof(cmd),"robocopy \"%s\" \"%s\" /MIR /NFL /NDL /NJH /NJS /nc /ns /np", pkgRoot, dest);
+      |                                                                 ^~                                                   ~~~~
+cli/fsal.c:109:21: note: 'snprintf' output between 52 and 1074 bytes into a destination of size 1024
+  109 |     char cmd[1024]; snprintf(cmd,sizeof(cmd),"robocopy \"%s\" \"%s\" /MIR /NFL /NDL /NJH /NJS /nc /ns /np", pkgRoot, dest);
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cli/fsal.c:114:72: warning: '\.fsal\' directive output may be truncated writing 7 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  114 |     char providedCmd[512]; snprintf(providedCmd,sizeof(providedCmd),"%s\\.fsal\\%s", dest, fc.cmduse);
+      |                                                                        ^~~~~~~~~
+cli/fsal.c:114:28: note: 'snprintf' output between 8 and 646 bytes into a destination of size 512
+  114 |     char providedCmd[512]; snprintf(providedCmd,sizeof(providedCmd),"%s\\.fsal\\%s", dest, fc.cmduse);
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cli/fsal.c:119:58: warning: '\run.wt' directive output may be truncated writing 7 bytes into a region of size between 1 and 512 [-Wformat-truncation=]
+  119 |         char runwt[512]; snprintf(runwt,sizeof(runwt),"%s\\run.wt", dest);
+      |                                                          ^~~~~~~~
+cli/fsal.c:119:26: note: 'snprintf' output between 8 and 519 bytes into a destination of size 512
+  119 |         char runwt[512]; snprintf(runwt,sizeof(runwt),"%s\\run.wt", dest);
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Build failed.

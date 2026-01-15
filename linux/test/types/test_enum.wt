@@ -1,0 +1,10 @@
+print("=== Enum Test ===");
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+}
+
+print("Enum definitions recognized");
+print("Enum test completed");

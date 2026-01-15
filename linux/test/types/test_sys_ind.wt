@@ -1,0 +1,6 @@
+print("=== sys_ind Test ===");
+
+sys_ind integer special_var = 100;
+print("special_var: {}", special_var);
+
+print("sys_ind keyword test completed");

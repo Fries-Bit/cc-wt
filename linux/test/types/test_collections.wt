@@ -1,0 +1,7 @@
+print("=== Array and Table Test ===");
+
+array numbers;
+table data;
+
+print("Array and table types recognized");
+print("Collection test completed");

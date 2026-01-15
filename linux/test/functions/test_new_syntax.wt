@@ -1,0 +1,31 @@
+print("=== New Function Syntax Test ===");
+
+fn add(a: integer, b: integer) -> integer {
+    return a + b;
+}
+
+integer result = add(5, 3);
+print("add(5, 3) = {}");
+print(result);
+
+fn greet(name: string) -> string {
+    return "Hello, " + name;
+}
+
+string msg = greet("World");
+print("greet result: {}");
+print(msg);
+
+fn process(count: integer, value&[i8]: integer) -> integer {
+    return count + 10;
+}
+
+integer processed = process(5, 8);
+print("process result: {}");
+print(processed);
+
+fn dual_return() ->* integer && string {
+    return 42;
+}
+
+print("New function syntax test completed");

@@ -1,0 +1,9 @@
+print("=== retype Test ===");
+
+integer num = 42;
+print("Original: {}", num);
+
+retype(num, float);
+print("After retype to float");
+
+print("retype test completed");

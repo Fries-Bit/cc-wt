@@ -1,0 +1,24 @@
+print("=== Comparison Operators Test ===");
+
+integer x = 10;
+integer y = 20;
+
+print("Testing equality operators:");
+print("x == y: {}", x == y);
+print("x != y: {}", x != y);
+print("x === 10: {}", x === 10);
+
+print("Testing relational operators:");
+print("x < y: {}", x < y);
+print("x <= y: {}", x <= y);
+print("x > y: {}", x > y);
+print("x >= y: {}", x >= y);
+
+print("Testing logical operators:");
+bool a = true;
+bool b = false;
+print("a && b: {}", a && b);
+print("a || b: {}", a || b);
+print("!a: {}", !a);
+
+print("Comparison operators test completed");

@@ -1,0 +1,12 @@
+print("=== Const Declaration Test ===");
+
+const integer MAGIC_NUMBER = 42;
+print("MAGIC_NUMBER: {}", MAGIC_NUMBER);
+
+const string APP_NAME = "Welt";
+print("APP_NAME: {}", APP_NAME);
+
+const bool DEBUG = true;
+print("DEBUG: {}", DEBUG);
+
+print("Const test completed");

@@ -1,10 +1,6 @@
 #include "internal.h"
 #include <ctype.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <unistd.h>
-#endif
 
 static int get_fsal_value(const char* path, const char* section, const char* key, char* out, size_t cap) {
     FILE* f = fopen(path, "r");
@@ -95,7 +91,7 @@ static int evaluate_comparison(const char* left_val, const char* right_val, Welt
             case TOKEN_STRICT_EQ: return strcmp(left_val, right_val) == 0;
             case TOKEN_EQ: {
                 // Not case sensitive
-                char* l = _strdup(left_val); char* r = _strdup(right_val);
+                char* l = strdup(left_val); char* r = strdup(right_val);
                 for(int i=0; l[i]; i++) l[i] = tolower(l[i]);
                 for(int i=0; r[i]; i++) r[i] = tolower(r[i]);
                 int res = strcmp(l, r) == 0;
@@ -252,8 +248,6 @@ static int handle_function_call(const char* path, int* pc_ptr, int end_tok, int 
     }
 }
 
-static void evaluate_simple_expression(const char* path, int* pc, int end_tok, int argc, const char** argv, char* out, size_t cap);
-
 static WeltType get_token_value_type(const char* val) {
     if(!val) return TYPE_UNDEFINED;
     if(strcmp(val, "true") == 0 || strcmp(val, "false") == 0) return TYPE_BOOL;
@@ -362,64 +356,6 @@ static const char* resolve_identifier(const char* path, int* pc, int end_tok) {
     return val;
 }
 
-static void evaluate_simple_expression(const char* path, int* pc, int end_tok, int argc, const char** argv, char* out, size_t cap) {
-    double result = 0;
-    int is_math = 0;
-    out[0] = '\0';
-    
-    while(*pc < end_tok && g_tokens[*pc].type != TOKEN_COMMA && g_tokens[*pc].type != TOKEN_RPAREN && g_tokens[*pc].type != TOKEN_SEMICOLON) {
-        const char* v = NULL;
-        int cur_pc = *pc;
-        
-        if(g_tokens[*pc].type == TOKEN_IDENTIFIER && *pc + 1 < end_tok && g_tokens[*pc+1].type == TOKEN_LPAREN) {
-             if (handle_function_call(path, pc, end_tok, argc, argv) == 0) {
-                 v = g_return_value;
-                 g_should_return = 0;
-             } else return;
-        } else if(g_tokens[*pc].type == TOKEN_IDENTIFIER) {
-            v = resolve_identifier(path, pc, end_tok);
-            if(!v) v = "";
-            (*pc)++;
-        } else {
-            v = g_tokens[*pc].value;
-            (*pc)++;
-        }
-        
-        if(v) {
-            WeltTokenType tt = g_tokens[cur_pc].type;
-            if(tt == TOKEN_PLUS || tt == TOKEN_MINUS || tt == TOKEN_STAR || tt == TOKEN_SLASH || tt == TOKEN_PERCENT) {
-                // Skip operator token, it will be handled when the next operand is found
-            } else {
-                WeltType vt = get_token_value_type(v);
-                if(vt == TYPE_INTEGER || vt == TYPE_FLOAT) {
-                    double val = atof(v);
-                    if(!is_math) { result = val; is_math = 1; }
-                    else if(cur_pc > 0) {
-                        WeltTokenType op = g_tokens[cur_pc-1].type;
-                        if(op == TOKEN_PLUS) result += val;
-                        else if(op == TOKEN_MINUS) result -= val;
-                        else if(op == TOKEN_STAR) result *= val;
-                        else if(op == TOKEN_SLASH && val != 0) result /= val;
-                        else if(op == TOKEN_PERCENT && val != 0) result = (int)result % (int)val;
-                        else result = val;
-                    }
-                } else {
-                    if(is_math) {
-                        char tmp[64]; snprintf(tmp, sizeof(tmp), "%g", result);
-                        strncat(out, tmp, cap - strlen(out) - 1);
-                        is_math = 0;
-                    }
-                    strncat(out, v, cap - strlen(out) - 1);
-                }
-            }
-        }
-    }
-    if(is_math) {
-        char tmp[64]; snprintf(tmp, sizeof(tmp), "%g", result);
-        strncat(out, tmp, cap - strlen(out) - 1);
-    }
-}
-
 static int check_type_compatibility(WeltType expected, WeltType actual) {
     if(expected == TYPE_UNDEFINED) return 1;
     if(actual == TYPE_UNDEFINED) return 1;
@@ -430,6 +366,7 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
     int pc = start_tok;
     while(pc < end_tok && !g_should_return){
         Token* tok = &g_tokens[pc];
+        printf("DEBUG: processing token %d: type=%d value='%s'\n", pc, tok->type, tok->value);
         if(tok->type == TOKEN_EOF) break;
         if(tok->type == TOKEN_SEMICOLON){ pc++; continue; }
         
@@ -836,7 +773,43 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                             }
                         }
                     } else {
-                        evaluate_simple_expression(path, &pc, end_tok, argc, argv, value, sizeof(value));
+                        double result = 0;
+                        int is_math = 0;
+
+                        while(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON){
+                            if(pc + 1 < end_tok && g_tokens[pc].type == TOKEN_IDENTIFIER && g_tokens[pc+1].type == TOKEN_LPAREN){
+                                // Function call in declaration
+                                if (handle_function_call(path, &pc, end_tok, argc, argv) != 0) return 1;
+                                strcat(value, g_return_value);
+                                g_should_return = 0;
+                            } else {
+                                const char* v = NULL;
+                                if(g_tokens[pc].type == TOKEN_IDENTIFIER){
+                                    v = get_variable_value(g_tokens[pc].value);
+                                    if(!v){
+                                        char err[256]; snprintf(err, sizeof(err), "E0013: use of undefined variable '%s'", g_tokens[pc].value);
+                                        welt_diagnostic(path, g_tokens[pc].line, g_tokens[pc].col, "", err);
+                                        return 1;
+                                    }
+                                } else {
+                                    v = g_tokens[pc].value;
+                                }
+                                if(v){
+                                    if(g_tokens[pc].type == TOKEN_NUMBER || (g_tokens[pc].type == TOKEN_IDENTIFIER && isdigit(v[0]))){
+                                         if(!is_math) { result = atof(v); is_math = 1; }
+                                         else {
+                                             if(pc > 0 && g_tokens[pc-1].type == TOKEN_PLUS) result += atof(v);
+                                             else if(pc > 0 && g_tokens[pc-1].type == TOKEN_MINUS) result -= atof(v);
+                                         }
+                                    } else {
+                                        strcat(value, v);
+                                    }
+                                }
+                                pc++;
+                            }
+                        }
+                        if(is_math && value[0] == '\0') snprintf(value, sizeof(value), "%g", result);
+                        if(value[0] == '\0' && !is_math) strcpy(value, g_return_value);
                     }
                 }
                 while(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON) pc++;
@@ -930,7 +903,43 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                     if(path) get_fsal_value(path, section, key, value, sizeof(value));
                 }
             } else {
-                evaluate_simple_expression(path, &pc, end_tok, argc, argv, value, sizeof(value));
+                double result = 0;
+                int is_math = 0;
+                while(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON){
+                    if(pc + 1 < end_tok && g_tokens[pc].type == TOKEN_IDENTIFIER && g_tokens[pc+1].type == TOKEN_LPAREN){
+                        execute_code_block(path, pc, end_tok, argc, argv);
+                        strcat(value, g_return_value);
+                        g_should_return = 0;
+                        while(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON && g_tokens[pc].type != TOKEN_PLUS && g_tokens[pc].type != TOKEN_MINUS) pc++;
+                    } else {
+                        const char* v = NULL;
+                        if(g_tokens[pc].type == TOKEN_IDENTIFIER){
+                            const char* vn = g_tokens[pc].value;
+                            v = resolve_identifier(path, &pc, end_tok);
+                            if(!v){
+                                char err[256]; snprintf(err, sizeof(err), "E0013: use of undefined variable '%s'", vn);
+                                welt_diagnostic(path, g_tokens[pc].line, g_tokens[pc].col, "", err);
+                                return 1;
+                            }
+                        } else {
+                            v = g_tokens[pc].value;
+                        }
+                        if(v){
+                            if(g_tokens[pc].type == TOKEN_NUMBER || (g_tokens[pc].type == TOKEN_IDENTIFIER && isdigit(v[0]))){
+                                if(!is_math) { result = atof(v); is_math = 1; }
+                                else {
+                                    if(pc > 0 && g_tokens[pc-1].type == TOKEN_PLUS) result += atof(v);
+                                    else if(pc > 0 && g_tokens[pc-1].type == TOKEN_MINUS) result -= atof(v);
+                                }
+                            } else {
+                                strcat(value, v);
+                            }
+                        }
+                        pc++;
+                    }
+                }
+                if(is_math && value[0] == '\0') snprintf(value, sizeof(value), "%g", result);
+                if(value[0] == '\0' && !is_math) strcpy(value, g_return_value);
             }
             WeltVariable* existing_var = get_variable(var_name);
             if(!existing_var){
@@ -958,23 +967,39 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
             if(g_tokens[pc].type == TOKEN_LPAREN){
                 pc++; char fmt[512] = {0};
                 if(g_tokens[pc].type == TOKEN_STRING){ strcpy(fmt, g_tokens[pc].value); pc++; }
-                else if(g_tokens[pc].type == TOKEN_NUMBER){ strcpy(fmt, g_tokens[pc].value); pc++; }
-                
+                else if(g_tokens[pc].type == TOKEN_NUMBER){ 
+                    strcpy(fmt, g_tokens[pc].value); 
+                    pc++; 
+                }
                 char args[16][256]; int arg_count = 0;
                 while(pc < end_tok && g_tokens[pc].type != TOKEN_RPAREN){
                     if(g_tokens[pc].type == TOKEN_COMMA) { pc++; continue; }
-                    evaluate_simple_expression(path, &pc, end_tok, argc, argv, args[arg_count], 256);
-                    arg_count++;
-                    if(arg_count >= 16) break;
+                    const char* val = NULL;
+                    if(g_tokens[pc].type == TOKEN_IDENTIFIER){
+                        const char* var_name = g_tokens[pc].value;
+                        val = resolve_identifier(path, &pc, end_tok);
+                        if(!val){
+                            char err[256]; snprintf(err, sizeof(err), "E0013: use of undefined variable '%s'", var_name);
+                            welt_diagnostic(path, g_tokens[pc].line, g_tokens[pc].col, "", err);
+                            return 1;
+                        }
+                        pc++;
+                    } else if(g_tokens[pc].type == TOKEN_NUMBER){
+                        val = g_tokens[pc].value;
+                        pc++;
+                    } else {
+                        val = g_tokens[pc].value;
+                        pc++;
+                    }
+                    if(arg_count < 16) strcpy(args[arg_count++], val ? val : "(null)");
                 }
-                if(pc < end_tok && g_tokens[pc].type == TOKEN_RPAREN) pc++;
+                if(g_tokens[pc].type == TOKEN_RPAREN) pc++;
                 if(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON){
                     welt_diagnostic(path, g_tokens[pc-1].line, g_tokens[pc-1].col, "", "E0009: expected semicolon after print"); return 1;
                 }
-                if(arg_count > 0 || fmt[0] != '\0'){
+                if(arg_count > 0){
                     char final_msg[2048] = {0}; char* pfmt = fmt; int cur_arg = 0;
-                    if(fmt[0] == '\0' || (strstr(fmt, "{}") == NULL && arg_count > 0)){
-                        if(fmt[0] != '\0') { strcat(final_msg, fmt); if(arg_count > 0) strcat(final_msg, " "); }
+                    if(fmt[0] == '\0'){
                         for(int i=0; i<arg_count; i++){
                             strcat(final_msg, args[i]);
                             if(i < arg_count - 1) strcat(final_msg, " ");
@@ -987,9 +1012,8 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                         }
                     }
                     printf("%s\n", final_msg);
-                }
-                if(pc < end_tok && g_tokens[pc].type == TOKEN_SEMICOLON) pc++;
-                continue;
+                } else printf("%s\n", fmt);
+                if(pc < end_tok) pc++; continue;
             }
         }
 
@@ -1002,6 +1026,7 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                     if(v) strcpy(code, v); pc++;
                 }
                 if(pc < end_tok && g_tokens[pc].type == TOKEN_RPAREN) pc++;
+                printf("[C-Library] Executing: %s\n", code);
             }
             if(pc < end_tok && g_tokens[pc].type == TOKEN_SEMICOLON) pc++;
             continue;
@@ -1074,48 +1099,9 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                         if(mpc < block_end && g_tokens[mpc].type == TOKEN_COMMA) mpc++;
                     }
                 } else {
-                int branch_taken = cond_result;
-                if(branch_taken) execute_code_block(path, block_start, block_end, argc, argv);
-                
-                while(pc < end_tok && g_tokens[pc].type == TOKEN_KEYWORD && strcmp(g_tokens[pc].value, "else") == 0){
-                    pc++;
-                    if(pc < end_tok && g_tokens[pc].type == TOKEN_KEYWORD && strcmp(g_tokens[pc].value, "if") == 0){
-                        pc++;
-                        int has_br = (g_tokens[pc].type == TOKEN_LBRACKET);
-                        int has_pa = (g_tokens[pc].type == TOKEN_LPAREN);
-                        if(has_br || has_pa) pc++;
-                        
-                        int local_cond = 0;
-                        if(pc + 2 < end_tok && (g_tokens[pc+1].type == TOKEN_EQ || g_tokens[pc+1].type == TOKEN_NE || g_tokens[pc+1].type == TOKEN_LT || g_tokens[pc+1].type == TOKEN_GT || g_tokens[pc+1].type == TOKEN_LE || g_tokens[pc+1].type == TOKEN_GE || g_tokens[pc+1].type == TOKEN_STRICT_EQ || g_tokens[pc+1].type == TOKEN_LT_GT)){
-                            const char* left = (g_tokens[pc].type == TOKEN_IDENTIFIER) ? resolve_identifier(path, &pc, end_tok) : g_tokens[pc].value;
-                            pc++; WeltTokenType op = g_tokens[pc].type; pc++;
-                            const char* right = (g_tokens[pc].type == TOKEN_IDENTIFIER) ? resolve_identifier(path, &pc, end_tok) : g_tokens[pc].value;
-                            if(left && right) local_cond = evaluate_comparison(left, right, op);
-                            pc++;
-                        } else {
-                            const char* v = (g_tokens[pc].type == TOKEN_IDENTIFIER) ? resolve_identifier(path, &pc, end_tok) : g_tokens[pc].value;
-                            if(v) local_cond = (strcmp(v, "true") == 0 || (isdigit(v[0]) && atoi(v) != 0) || (v[0] != '\0' && strcmp(v, "false") != 0 && strcmp(v, "0") != 0));
-                            pc++;
-                        }
-                        if(has_br && g_tokens[pc].type == TOKEN_RBRACKET) pc++;
-                        if(has_pa && g_tokens[pc].type == TOKEN_RPAREN) pc++;
-                        while(pc < end_tok && g_tokens[pc].type != TOKEN_LBRACE) pc++;
-                        if(pc < end_tok){
-                            pc++; int b_start = pc, depth = 1;
-                            while(pc < end_tok && depth > 0){
-                                if(g_tokens[pc].type == TOKEN_LBRACE) depth++;
-                                else if(g_tokens[pc].type == TOKEN_RBRACE) depth--;
-                                if(depth > 0) pc++;
-                            }
-                            int b_end = pc; pc++;
-                            if(!branch_taken && local_cond){
-                                execute_code_block(path, b_start, b_end, argc, argv);
-                                branch_taken = 1;
-                            }
-                        }
-                    } else {
-                        // Final else
-                        if(pc < end_tok && g_tokens[pc].type == TOKEN_LBRACE){
+                    if(cond_result) execute_code_block(path, block_start, block_end, argc, argv);
+                    if(pc < end_tok && g_tokens[pc].type == TOKEN_KEYWORD && strcmp(g_tokens[pc].value, "else") == 0){
+                        pc++; if(g_tokens[pc].type == TOKEN_LBRACE){
                             pc++; int e_start = pc, e_depth = 1;
                             while(pc < end_tok && e_depth > 0){
                                 if(g_tokens[pc].type == TOKEN_LBRACE) e_depth++;
@@ -1123,15 +1109,13 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                                 if(e_depth > 0) pc++;
                             }
                             int e_end = pc; pc++;
-                            if(!branch_taken) execute_code_block(path, e_start, e_end, argc, argv);
+                            if(!cond_result) execute_code_block(path, e_start, e_end, argc, argv);
                         } else {
                              int e_start = pc; while(pc < end_tok && g_tokens[pc].type != TOKEN_SEMICOLON) pc++;
-                             if(!branch_taken) execute_code_block(path, e_start, pc, argc, argv);
+                             if(!cond_result) execute_code_block(path, e_start, pc, argc, argv);
                              if(pc < end_tok) pc++;
                         }
-                        branch_taken = 1;
                     }
-                }
                 }
                 continue;
             }
@@ -1170,6 +1154,7 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
         }
 
         if(tok->type == TOKEN_IDENTIFIER && pc + 1 < end_tok && g_tokens[pc+1].type == TOKEN_DOT){
+            printf("DEBUG: Found DOT for %s\n", tok->value);
             char var_name[128]; strcpy(var_name, tok->value);
             WeltVariable* var = get_variable(var_name);
             if(var){
@@ -1228,10 +1213,12 @@ int execute_code_block(const char* path, int start_tok, int end_tok, int argc, c
                             }
                             if(tar_pc != -1){
                                 // It's a tar_fn! Set @target and call it.
+                                printf("DEBUG: Calling tar_fn %s\n", method);
                                 set_variable("@target", var->value, var->type, path, tok->line, tok->col);
                                 int call_pc = method_pc;
                                 handle_function_call(path, &call_pc, end_tok, argc, argv);
                                 pc = call_pc;
+                                printf("DEBUG: tar_fn %s returned, pc is now %d\n", method, pc);
                             }
                         }
                     } else {
@@ -1317,6 +1304,7 @@ static int find_top_level_code(int* start, int* end, FuncRange* ranges, int rang
 }
 
 int interpret(const char* path, const char* src, int argc, const char** argv){
+    printf("DEBUG: interpret called for %s\n", path);
     g_should_return = 0; memset(g_return_value, 0, sizeof(g_return_value));
     g_current_expected_ret_type = TYPE_UNDEFINED;
     if(tokenize(path, src) != 0) return 1;

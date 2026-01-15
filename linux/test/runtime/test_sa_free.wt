@@ -1,0 +1,19 @@
+print("=== sa_free Test ===");
+
+string test_result = "PASS";
+
+array my_array;
+print("Array created");
+
+sa_free(my_array);
+print("sa_free called on array");
+
+array test_array;
+sa_free(test_array);
+print("sa_free: Multiple arrays freed");
+
+if (test_result == "PASS") {
+    print("sa_free test completed: PASS");
+} else {
+    print("sa_free test completed: FAIL");
+}

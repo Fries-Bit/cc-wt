@@ -1,0 +1,16 @@
+print("=== Basic Types Test ===");
+
+integer num = 100;
+print("integer: {}", num);
+
+float decimal = 3.14;
+print("float: {}", decimal);
+
+string text = "Hello, Welt!";
+print("string: {}", text);
+print("string length: {}", text.length);
+
+bool condition = true;
+print("bool: {}", condition);
+
+print("Type test completed");

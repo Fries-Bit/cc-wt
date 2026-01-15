@@ -1,0 +1,9 @@
+print("=== ss_input Test ===");
+
+string username = ss_input("Enter your username: ");
+print("You entered: {}", username);
+print("Length: {}", username.length);
+print("Bytes: {}", username.bytes);
+print("Address: {}", username.addr);
+
+print("ss_input test completed");
